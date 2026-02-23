@@ -93,6 +93,7 @@ export type Database = {
       }
       vans: {
         Row: {
+          co2_per_km: number | null
           created_at: string
           description: string | null
           features: Json | null
@@ -106,6 +107,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          co2_per_km?: number | null
           created_at?: string
           description?: string | null
           features?: Json | null
@@ -119,6 +121,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          co2_per_km?: number | null
           created_at?: string
           description?: string | null
           features?: Json | null

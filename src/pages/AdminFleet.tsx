@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Wifi, Wind, Star, Users, Loader2, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Wifi, Wind, Star, Users, Loader2, Eye, EyeOff, Leaf } from "lucide-react";
 
 type VanStatus = "available" | "maintenance" | "hidden";
 
@@ -25,6 +25,7 @@ interface Van {
   description: string | null;
   features: { wifi: boolean; ac: boolean; vip_seats: boolean };
   status: VanStatus;
+  co2_per_km: number | null;
 }
 
 const statusBadge: Record<VanStatus, string> = {
@@ -42,6 +43,7 @@ const emptyForm = {
   description: "",
   features: { wifi: false, ac: true, vip_seats: false },
   status: "available" as VanStatus,
+  co2_per_km: "" as string | number,
 };
 
 export default function AdminFleet() {
@@ -81,6 +83,7 @@ export default function AdminFleet() {
       description: van.description ?? "",
       features: van.features,
       status: van.status,
+      co2_per_km: van.co2_per_km ?? "",
     });
     setImageFile(null);
     setDialogOpen(true);
@@ -100,7 +103,7 @@ export default function AdminFleet() {
         image_url = data.publicUrl;
       }
 
-      const payload = { ...form, image_url };
+      const payload = { ...form, image_url, co2_per_km: form.co2_per_km === "" ? null : Number(form.co2_per_km) };
 
       if (editingVan) {
         const { error } = await supabase.from("vans").update(payload).eq("id", editingVan.id);
@@ -175,11 +178,14 @@ export default function AdminFleet() {
                     </div>
                     <p className="font-bold text-gold">฿{Number(van.price_per_day).toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/day</span></p>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 flex-wrap">
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" />{van.seats} seats</span>
                     {van.features.wifi && <span className="flex items-center gap-1"><Wifi className="w-3 h-3" />WiFi</span>}
                     {van.features.ac && <span className="flex items-center gap-1"><Wind className="w-3 h-3" />AC</span>}
                     {van.features.vip_seats && <span className="flex items-center gap-1"><Star className="w-3 h-3 text-gold" />VIP</span>}
+                    {van.co2_per_km != null && (
+                      <span className="flex items-center gap-1 text-green-600"><Leaf className="w-3 h-3" />{van.co2_per_km}g/km</span>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1 h-8 gap-1" onClick={() => openEditDialog(van)}>
@@ -248,6 +254,11 @@ export default function AdminFleet() {
                   <SelectItem value="hidden">Hidden</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5"><Leaf className="w-4 h-4 text-green-600" /> CO₂ Emission (g/km)</Label>
+              <Input type="number" min={0} step={0.1} value={form.co2_per_km} onChange={(e) => setForm(f => ({ ...f, co2_per_km: e.target.value === "" ? "" : Number(e.target.value) }))} placeholder="e.g. 150" />
+              <p className="text-xs text-muted-foreground">ปล่อยว่างหากไม่ทราบค่า CO₂</p>
             </div>
             <div className="space-y-2">
               <Label>Features</Label>

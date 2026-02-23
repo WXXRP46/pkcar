@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, differenceInDays, addDays, isAfter } from "date-fns";
 import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
-  CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown
+  CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf
 } from "lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ interface Van {
   description: string | null;
   features: { wifi: boolean; ac: boolean; vip_seats: boolean };
   status: string;
+  co2_per_km: number | null;
 }
 
 const CONTACT_LINE = "https://line.me/ti/p/your-line-id";
@@ -49,6 +50,7 @@ export default function Index() {
 
   const [form, setForm] = useState({ name: "", phone: "", pickup: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number } | null>(null);
   const { toast } = useToast();
 
   const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0;
@@ -110,6 +112,13 @@ export default function Index() {
       toast({ title: "Booking Failed", description: error.message, variant: "destructive" });
     } else {
       setBookingRef((data as { id: string }).id.slice(0, 8).toUpperCase());
+      setBookingSummary({
+        vanName: selectedVan.name,
+        startDate: format(startDate, "d MMM"),
+        endDate: format(endDate, "d MMM yyyy"),
+        days,
+        totalPrice,
+      });
       setBookingOpen(false);
       setSuccessOpen(true);
       setForm({ name: "", phone: "", pickup: "", notes: "" });
@@ -279,7 +288,7 @@ export default function Index() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 flex-wrap">
                       <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
                         <Users className="w-3 h-3" /> {van.seats} seats
                       </span>
@@ -291,6 +300,11 @@ export default function Index() {
                       {van.features.ac && (
                         <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
                           <Wind className="w-3 h-3" /> AC
+                        </span>
+                      )}
+                      {van.co2_per_km != null && (
+                        <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                          <Leaf className="w-3 h-3" /> {van.co2_per_km}g CO₂/km
                         </span>
                       )}
                     </div>
@@ -357,12 +371,17 @@ export default function Index() {
               </div>
               <div className="p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs">
                       <Users className="w-3 h-3" /> {selectedVan.seats} Passengers
                     </span>
                     {selectedVan.features.wifi && <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs"><Wifi className="w-3 h-3" /> WiFi</span>}
                     {selectedVan.features.ac && <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs"><Wind className="w-3 h-3" /> AC</span>}
+                    {selectedVan.co2_per_km != null && (
+                      <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs">
+                        <Leaf className="w-3 h-3" /> {selectedVan.co2_per_km}g CO₂/km
+                      </span>
+                    )}
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-gold">฿{Number(selectedVan.price_per_day).toLocaleString()}</p>
@@ -541,11 +560,11 @@ export default function Index() {
               <p className="text-muted-foreground text-sm">Reference: <span className="font-mono font-bold text-foreground">#{bookingRef}</span></p>
             </div>
             <div className="rounded-xl p-4 text-sm text-left space-y-1" style={{ background: "hsl(var(--muted))" }}>
-              <p className="font-semibold text-foreground">{selectedVan?.name}</p>
-              {startDate && endDate && (
-                <p className="text-muted-foreground">{format(startDate, "d MMM")} – {format(endDate, "d MMM yyyy")} ({days} days)</p>
+              <p className="font-semibold text-foreground">{bookingSummary?.vanName}</p>
+              {bookingSummary && (
+                <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} days)</p>
               )}
-              <p className="text-gold font-bold">Total: ฿{totalPrice.toLocaleString()}</p>
+              <p className="text-gold font-bold">Total: ฿{(bookingSummary?.totalPrice ?? 0).toLocaleString()}</p>
             </div>
             <p className="text-xs text-muted-foreground">We'll call or message you within 2 hours to confirm your booking.</p>
             <div className="flex flex-col gap-2">
