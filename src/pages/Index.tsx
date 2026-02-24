@@ -178,7 +178,7 @@ export default function Index() {
             <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">Contact</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="hidden sm:flex border-white/20 text-white hover:bg-white/10" onClick={() => setLookupOpen(true)}>
+            <Button size="sm" variant="outline" className="hidden sm:flex border-foreground/20 text-foreground hover:bg-foreground/10" onClick={() => setLookupOpen(true)}>
               <Search className="w-3.5 h-3.5 mr-1.5" /> ตรวจสอบการจอง
             </Button>
             <Button size="sm" asChild className="hidden sm:flex" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
