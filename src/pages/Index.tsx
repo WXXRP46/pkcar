@@ -13,7 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, differenceInDays, addDays, isAfter } from "date-fns";
 import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
-  CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf
+  CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf,
+  Search, Copy, Loader2
 } from "lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
@@ -41,7 +42,7 @@ export default function Index() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
-  const [bookingRef, setBookingRef] = useState("");
+  const [bookingCode, setBookingCode] = useState("");
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -51,6 +52,14 @@ export default function Index() {
   const [form, setForm] = useState({ name: "", phone: "", pickup: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
   const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number } | null>(null);
+
+  // Booking lookup
+  const [lookupCode, setLookupCode] = useState("");
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState<any | null>(null);
+  const [lookupError, setLookupError] = useState("");
+
   const { toast } = useToast();
 
   const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0;
@@ -79,6 +88,24 @@ export default function Index() {
     setSelectedVan(van);
     setDetailOpen(false);
     setBookingOpen(true);
+  };
+
+  const handleLookup = async () => {
+    if (!lookupCode.trim()) return;
+    setLookupLoading(true);
+    setLookupError("");
+    setLookupResult(null);
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("*, vans(name, model, image_url)")
+      .eq("booking_code", lookupCode.trim().toUpperCase())
+      .maybeSingle();
+    if (error || !data) {
+      setLookupError("ไม่พบการจองด้วยรหัสนี้ กรุณาตรวจสอบอีกครั้ง");
+    } else {
+      setLookupResult(data);
+    }
+    setLookupLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,7 +138,7 @@ export default function Index() {
     if (error) {
       toast({ title: "Booking Failed", description: error.message, variant: "destructive" });
     } else {
-      setBookingRef((data as { id: string }).id.slice(0, 8).toUpperCase());
+      setBookingCode((data as { booking_code: string }).booking_code);
       setBookingSummary({
         vanName: selectedVan.name,
         startDate: format(startDate, "d MMM"),
@@ -145,11 +172,19 @@ export default function Index() {
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#fleet" className="hover:text-foreground transition-colors">Our Fleet</a>
             <a href="#why-us" className="hover:text-foreground transition-colors">Why Us</a>
+            <button onClick={() => setLookupOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
+              <Search className="w-3.5 h-3.5" /> ตรวจสอบการจอง
+            </button>
             <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">Contact</a>
           </nav>
-          <Button size="sm" asChild className="hidden sm:flex" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
-            <a href="#fleet">Book Now</a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="hidden sm:flex border-white/20 text-white hover:bg-white/10" onClick={() => setLookupOpen(true)}>
+              <Search className="w-3.5 h-3.5 mr-1.5" /> ตรวจสอบการจอง
+            </Button>
+            <Button size="sm" asChild className="hidden sm:flex" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
+              <a href="#fleet">Book Now</a>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -556,29 +591,138 @@ export default function Index() {
               <CheckCircle className="w-8 h-8 text-gold" />
             </div>
             <div>
-              <h2 className="text-xl font-bold mb-1">Booking Received!</h2>
-              <p className="text-muted-foreground text-sm">Reference: <span className="font-mono font-bold text-foreground">#{bookingRef}</span></p>
+              <h2 className="text-xl font-bold mb-1">จองสำเร็จ!</h2>
+              <p className="text-muted-foreground text-sm mb-2">รหัสการจองของคุณ:</p>
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ background: "hsl(var(--gold) / 0.12)", border: "1px solid hsl(var(--gold) / 0.3)" }}
+                onClick={() => {
+                  navigator.clipboard.writeText(bookingCode);
+                  toast({ title: "คัดลอกแล้ว!", description: `รหัส ${bookingCode} ถูกคัดลอกแล้ว` });
+                }}
+              >
+                <span className="font-mono font-bold text-2xl tracking-widest text-gold">{bookingCode}</span>
+                <Copy className="w-4 h-4 text-gold" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">กดเพื่อคัดลอกรหัส • ใช้ค้นหาสถานะการจอง</p>
             </div>
             <div className="rounded-xl p-4 text-sm text-left space-y-1" style={{ background: "hsl(var(--muted))" }}>
               <p className="font-semibold text-foreground">{bookingSummary?.vanName}</p>
               {bookingSummary && (
-                <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} days)</p>
+                <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} วัน)</p>
               )}
-              <p className="text-gold font-bold">Total: ฿{(bookingSummary?.totalPrice ?? 0).toLocaleString()}</p>
+              <p className="text-gold font-bold">รวม: ฿{(bookingSummary?.totalPrice ?? 0).toLocaleString()}</p>
             </div>
-            <p className="text-xs text-muted-foreground">We'll call or message you within 2 hours to confirm your booking.</p>
+            <p className="text-xs text-muted-foreground">ทีมงานจะติดต่อกลับภายใน 2 ชั่วโมงเพื่อยืนยันการจอง</p>
             <div className="flex flex-col gap-2">
               <Button asChild style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                 <a href={CONTACT_LINE} target="_blank" rel="noreferrer">
-                  <MessageCircle className="w-4 h-4 mr-2" /> Chat on LINE
+                  <MessageCircle className="w-4 h-4 mr-2" /> แชทผ่าน LINE
                 </a>
               </Button>
               <Button variant="outline" asChild>
                 <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer">
-                  <Phone className="w-4 h-4 mr-2" /> Contact via WhatsApp
+                  <Phone className="w-4 h-4 mr-2" /> ติดต่อผ่าน WhatsApp
                 </a>
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Lookup Dialog */}
+      <Dialog open={lookupOpen} onOpenChange={(open) => { setLookupOpen(open); if (!open) { setLookupResult(null); setLookupError(""); setLookupCode(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5 text-gold" />
+              ค้นหาการจอง
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex gap-2">
+              <Input
+                placeholder="กรอกรหัสการจอง เช่น A1B2C3"
+                value={lookupCode}
+                onChange={(e) => setLookupCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+                className="font-mono tracking-wider uppercase"
+              />
+              <Button
+                onClick={handleLookup}
+                disabled={lookupLoading || !lookupCode.trim()}
+                style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
+              >
+                {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
+
+            {lookupError && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">
+                {lookupError}
+              </motion.p>
+            )}
+
+            {lookupResult && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <div className="rounded-xl overflow-hidden border border-border">
+                  {lookupResult.vans?.image_url && (
+                    <img src={lookupResult.vans.image_url} alt={lookupResult.vans.name} className="w-full h-40 object-cover" />
+                  )}
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-foreground">{lookupResult.vans?.name || "Van"}</h3>
+                        <p className="text-xs text-muted-foreground">{lookupResult.vans?.model}</p>
+                      </div>
+                      <span className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-semibold",
+                        lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
+                        lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
+                        lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
+                        lookupResult.status === "cancelled" && "bg-red-100 text-red-700",
+                      )}>
+                        {lookupResult.status === "confirmed" ? "ยืนยันแล้ว" :
+                         lookupResult.status === "pending" ? "รอดำเนินการ" :
+                         lookupResult.status === "completed" ? "เสร็จสิ้น" : "ยกเลิก"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">ชื่อผู้จอง</p>
+                        <p className="font-medium text-foreground">{lookupResult.customer_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">เบอร์โทร</p>
+                        <p className="font-medium text-foreground">{lookupResult.customer_phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">วันรับรถ</p>
+                        <p className="font-medium text-foreground">{lookupResult.start_date}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">วันคืนรถ</p>
+                        <p className="font-medium text-foreground">{lookupResult.end_date}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">จุดรับรถ</p>
+                        <p className="font-medium text-foreground">{lookupResult.pickup_location}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">ราคารวม</p>
+                        <p className="font-bold text-gold">฿{Number(lookupResult.total_price).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    {lookupResult.notes && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">หมายเหตุ</p>
+                        <p className="text-sm text-foreground">{lookupResult.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

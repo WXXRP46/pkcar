@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          booking_code: string | null
           created_at: string
           customer_name: string
           customer_phone: string
@@ -30,6 +31,7 @@ export type Database = {
           van_id: string
         }
         Insert: {
+          booking_code?: string | null
           created_at?: string
           customer_name: string
           customer_phone: string
@@ -44,6 +46,7 @@ export type Database = {
           van_id: string
         }
         Update: {
+          booking_code?: string | null
           created_at?: string
           customer_name?: string
           customer_phone?: string
