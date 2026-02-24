@@ -218,12 +218,12 @@ export default function Index() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button size="lg" asChild className="h-12 px-7 text-sm font-semibold" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                 <a href="#fleet">
-                  Explore Fleet <ArrowRight className="w-4 h-4 ml-2" />
+                  เลือกดูรถ <ArrowRight className="w-4 h-4 ml-2" />
                 </a>
               </Button>
               <Button size="lg" variant="outline" asChild className="h-12 px-7 text-sm font-semibold border-white/25 text-white hover:bg-white/10">
-                <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp Us
+                <a href="#footer">
+                  <Phone className="w-4 h-4 mr-2" /> ติดต่อเรา
                 </a>
               </Button>
             </div>
@@ -360,7 +360,7 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer style={{ background: "hsl(var(--primary))" }} className="py-10 px-4 sm:px-6">
+      <footer id="footer" style={{ background: "hsl(var(--primary))" }} className="py-10 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gold">
