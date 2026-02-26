@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Filter, Phone } from "lucide-react";
 
-type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+type BookingStatus = "pending" | "confirmed" | "proceed" | "completed" | "cancelled";
 
 interface Booking {
   id: string;
@@ -23,12 +23,15 @@ interface Booking {
   status: BookingStatus;
   notes: string | null;
   created_at: string;
+  booking_code: string | null;
+  pickup_time: string | null;
   vans: { name: string; model: string } | null;
 }
 
 const statusColors: Record<BookingStatus, string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
   confirmed: "bg-green-100 text-green-800 border-green-200",
+  proceed: "bg-purple-100 text-purple-800 border-purple-200",
   completed: "bg-blue-100 text-blue-800 border-blue-200",
   cancelled: "bg-red-100 text-red-800 border-red-200",
 };
@@ -88,7 +91,8 @@ export default function AdminBookings() {
                 <SelectItem value="all">All Bookings</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                 <SelectItem value="proceed">Proceed</SelectItem>
+                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -102,8 +106,9 @@ export default function AdminBookings() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="text-left p-4 font-medium text-muted-foreground">Customer</th>
-                    <th className="text-left p-4 font-medium text-muted-foreground">Van</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Code</th>
+                     <th className="text-left p-4 font-medium text-muted-foreground">Customer</th>
+                     <th className="text-left p-4 font-medium text-muted-foreground">Van</th>
                     <th className="text-left p-4 font-medium text-muted-foreground">Dates</th>
                     <th className="text-left p-4 font-medium text-muted-foreground">Pickup</th>
                     <th className="text-left p-4 font-medium text-muted-foreground">Total</th>
@@ -126,7 +131,10 @@ export default function AdminBookings() {
                       className="border-b hover:bg-muted/30 transition-colors"
                     >
                       <td className="p-4">
-                        <p className="font-medium">{booking.customer_name}</p>
+                         <span className="font-mono text-xs font-bold tracking-wider bg-muted px-2 py-1 rounded">{booking.booking_code ?? "—"}</span>
+                       </td>
+                       <td className="p-4">
+                         <p className="font-medium">{booking.customer_name}</p>
                         <a href={`tel:${booking.customer_phone}`} className="text-xs text-gold hover:underline flex items-center gap-1">
                           <Phone className="w-3 h-3" />{booking.customer_phone}
                         </a>
@@ -149,20 +157,25 @@ export default function AdminBookings() {
                       <td className="p-4">
                         <div className="flex gap-1">
                           {booking.status === "pending" && (
-                            <>
-                              <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "confirmed")}>
-                                <CheckCircle className="w-4 h-4 mr-1 text-green-600" /> Confirm
-                              </Button>
-                              <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "cancelled")}>
-                                <XCircle className="w-4 h-4 mr-1 text-destructive" /> Cancel
-                              </Button>
-                            </>
-                          )}
-                          {booking.status === "confirmed" && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "completed")}>
-                              <CheckCircle className="w-4 h-4 mr-1 text-primary" /> Complete
-                            </Button>
-                          )}
+                             <>
+                               <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "confirmed")}>
+                                 <CheckCircle className="w-4 h-4 mr-1 text-green-600" /> Confirm
+                               </Button>
+                               <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "cancelled")}>
+                                 <XCircle className="w-4 h-4 mr-1 text-destructive" /> Cancel
+                               </Button>
+                             </>
+                           )}
+                           {booking.status === "confirmed" && (
+                             <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "proceed")}>
+                               <CheckCircle className="w-4 h-4 mr-1 text-purple-600" /> Proceed
+                             </Button>
+                           )}
+                           {booking.status === "proceed" && (
+                             <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-muted" onClick={() => updateStatus(booking.id, "completed")}>
+                               <CheckCircle className="w-4 h-4 mr-1 text-primary" /> Complete
+                             </Button>
+                           )}
                         </div>
                       </td>
                     </motion.tr>
@@ -193,21 +206,32 @@ export default function AdminBookings() {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
-                  <div><p className="font-medium text-foreground">Van</p>{booking.vans?.name}</div>
+                   <div><p className="font-medium text-foreground">รหัส</p><span className="font-mono text-xs font-bold tracking-wider">{booking.booking_code ?? "—"}</span></div>
+                   <div><p className="font-medium text-foreground">Van</p>{booking.vans?.name}</div>
                   <div><p className="font-medium text-foreground">Total</p>฿{Number(booking.total_price).toLocaleString()}</div>
                   <div><p className="font-medium text-foreground">From</p>{format(new Date(booking.start_date), "d MMM yyyy")}</div>
                   <div><p className="font-medium text-foreground">To</p>{format(new Date(booking.end_date), "d MMM yyyy")}</div>
                 </div>
                 {booking.status === "pending" && (
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => updateStatus(booking.id, "confirmed")}>
-                      Confirm
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => updateStatus(booking.id, "cancelled")}>
-                      Cancel
-                    </Button>
-                  </div>
-                )}
+                   <div className="flex gap-2">
+                     <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => updateStatus(booking.id, "confirmed")}>
+                       Confirm
+                     </Button>
+                     <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => updateStatus(booking.id, "cancelled")}>
+                       Cancel
+                     </Button>
+                   </div>
+                 )}
+                 {booking.status === "confirmed" && (
+                   <Button size="sm" className="w-full h-8 text-xs" onClick={() => updateStatus(booking.id, "proceed")}>
+                     Proceed
+                   </Button>
+                 )}
+                 {booking.status === "proceed" && (
+                   <Button size="sm" className="w-full h-8 text-xs" onClick={() => updateStatus(booking.id, "completed")}>
+                     Complete
+                   </Button>
+                 )}
               </CardContent>
             </Card>
           ))}
