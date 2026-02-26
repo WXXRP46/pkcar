@@ -24,6 +24,7 @@ export type Database = {
           id: string
           notes: string | null
           pickup_location: string
+          pickup_time: string | null
           start_date: string
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number
@@ -39,6 +40,7 @@ export type Database = {
           id?: string
           notes?: string | null
           pickup_location: string
+          pickup_time?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price: number
@@ -54,6 +56,7 @@ export type Database = {
           id?: string
           notes?: string | null
           pickup_location?: string
+          pickup_time?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number
@@ -155,7 +158,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "staff"
-      booking_status: "pending" | "confirmed" | "completed" | "cancelled"
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "proceed"
+        | "completed"
+        | "cancelled"
       van_status: "available" | "maintenance" | "hidden"
     }
     CompositeTypes: {
@@ -285,7 +293,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "staff"],
-      booking_status: ["pending", "confirmed", "completed", "cancelled"],
+      booking_status: [
+        "pending",
+        "confirmed",
+        "proceed",
+        "completed",
+        "cancelled",
+      ],
       van_status: ["available", "maintenance", "hidden"],
     },
   },

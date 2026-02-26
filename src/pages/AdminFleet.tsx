@@ -220,16 +220,10 @@ export default function AdminFleet() {
                 <Input value={form.model} onChange={(e) => setForm(f => ({ ...f, model: e.target.value }))} placeholder="Mercedes V-Class" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Seats</Label>
-                <Input type="number" min={1} value={form.seats} onChange={(e) => setForm(f => ({ ...f, seats: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Price per Day (฿)</Label>
-                <Input type="number" min={0} value={form.price_per_day} onChange={(e) => setForm(f => ({ ...f, price_per_day: Number(e.target.value) }))} />
-              </div>
-            </div>
+            <div className="space-y-1.5">
+               <Label>Price per Day (฿)</Label>
+               <Input type="number" min={0} value={form.price_per_day} onChange={(e) => setForm(f => ({ ...f, price_per_day: Number(e.target.value) }))} />
+             </div>
             <div className="space-y-1.5">
               <Label>Image URL (or upload below)</Label>
               <Input value={form.image_url} onChange={(e) => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
@@ -260,22 +254,32 @@ export default function AdminFleet() {
               <Input type="number" min={0} step={0.1} value={form.co2_per_km} onChange={(e) => setForm(f => ({ ...f, co2_per_km: e.target.value === "" ? "" : Number(e.target.value) }))} placeholder="e.g. 150" />
               <p className="text-xs text-muted-foreground">ปล่อยว่างหากไม่ทราบค่า CO₂</p>
             </div>
-            <div className="space-y-2">
-              <Label>Features</Label>
-              <div className="flex gap-4">
-                {(["wifi", "ac", "vip_seats"] as const).map((feat) => (
-                  <label key={feat} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.features[feat]}
-                      onChange={(e) => setForm(f => ({ ...f, features: { ...f.features, [feat]: e.target.checked } }))}
-                      className="rounded"
-                    />
-                    <span className="text-sm capitalize">{feat.replace("_", " ")}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            <div className="space-y-3">
+               <Label>สิ่งอำนวยความสะดวก</Label>
+               <div className="grid grid-cols-2 gap-3">
+                 <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                   <input type="checkbox" checked={form.features.wifi} onChange={(e) => setForm(f => ({ ...f, features: { ...f.features, wifi: e.target.checked } }))} className="rounded" />
+                   <Wifi className="w-4 h-4 text-muted-foreground" />
+                   <span className="text-sm">Free WiFi</span>
+                 </label>
+                 <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                   <input type="checkbox" checked={form.features.ac} onChange={(e) => setForm(f => ({ ...f, features: { ...f.features, ac: e.target.checked } }))} className="rounded" />
+                   <Wind className="w-4 h-4 text-muted-foreground" />
+                   <span className="text-sm">แอร์</span>
+                 </label>
+                 <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                   <input type="checkbox" checked={form.features.vip_seats} onChange={(e) => setForm(f => ({ ...f, features: { ...f.features, vip_seats: e.target.checked } }))} className="rounded" />
+                   <Star className="w-4 h-4 text-gold" />
+                   <span className="text-sm">VIP Seats</span>
+                 </label>
+               </div>
+               <div className="grid grid-cols-2 gap-4 mt-2">
+                 <div className="space-y-1.5">
+                   <Label className="flex items-center gap-1.5"><Users className="w-4 h-4" /> จำนวนที่นั่ง</Label>
+                   <Input type="number" min={1} value={form.seats} onChange={(e) => setForm(f => ({ ...f, seats: Number(e.target.value) }))} />
+                 </div>
+               </div>
+             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {saving ? "Saving..." : editingVan ? "Save Changes" : "Add Van"}

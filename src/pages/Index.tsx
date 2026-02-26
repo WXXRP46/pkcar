@@ -49,7 +49,7 @@ export default function Index() {
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
 
-  const [form, setForm] = useState({ name: "", phone: "", pickup: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", pickup: "", pickupTime: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
   const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number } | null>(null);
 
@@ -130,8 +130,9 @@ export default function Index() {
       start_date: format(startDate, "yyyy-MM-dd"),
       end_date: format(endDate, "yyyy-MM-dd"),
       pickup_location: form.pickup,
-      total_price: totalPrice,
-      notes: form.notes || null,
+       pickup_time: form.pickupTime || null,
+       total_price: totalPrice,
+       notes: form.notes || null,
       status: "pending",
     }).select().single();
 
@@ -148,7 +149,7 @@ export default function Index() {
       });
       setBookingOpen(false);
       setSuccessOpen(true);
-      setForm({ name: "", phone: "", pickup: "", notes: "" });
+      setForm({ name: "", phone: "", pickup: "", pickupTime: "", notes: "" });
       setStartDate(undefined);
       setEndDate(undefined);
     }
@@ -546,18 +547,32 @@ export default function Index() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Pickup Location</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Suvarnabhumi Airport, Terminal 2"
-                    className="pl-9"
-                    value={form.pickup}
-                    onChange={(e) => setForm(f => ({ ...f, pickup: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
+                 <Label>Pickup Location</Label>
+                 <div className="relative">
+                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                   <Input
+                     placeholder="Suvarnabhumi Airport, Terminal 2"
+                     className="pl-9"
+                     value={form.pickup}
+                     onChange={(e) => setForm(f => ({ ...f, pickup: e.target.value }))}
+                     required
+                   />
+                 </div>
+               </div>
+
+               <div className="space-y-1.5">
+                 <Label>Pickup Time</Label>
+                 <div className="relative">
+                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                   <Input
+                     type="time"
+                     placeholder="08:00"
+                     className="pl-9"
+                     value={form.pickupTime}
+                     onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))}
+                   />
+                 </div>
+               </div>
 
               <div className="space-y-1.5">
                 <Label>Additional Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
@@ -675,16 +690,18 @@ export default function Index() {
                         <h3 className="font-bold text-foreground">{lookupResult.vans?.name || "Van"}</h3>
                         <p className="text-xs text-muted-foreground">{lookupResult.vans?.model}</p>
                       </div>
-                      <span className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-semibold",
-                        lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
-                        lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
-                        lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
-                        lookupResult.status === "cancelled" && "bg-red-100 text-red-700",
-                      )}>
-                        {lookupResult.status === "confirmed" ? "ยืนยันแล้ว" :
-                         lookupResult.status === "pending" ? "รอดำเนินการ" :
-                         lookupResult.status === "completed" ? "เสร็จสิ้น" : "ยกเลิก"}
+                       <span className={cn(
+                         "px-2.5 py-1 rounded-full text-xs font-semibold",
+                         lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
+                         lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
+                         lookupResult.status === "proceed" && "bg-purple-100 text-purple-700",
+                         lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
+                         lookupResult.status === "cancelled" && "bg-red-100 text-red-700",
+                       )}>
+                         {lookupResult.status === "confirmed" ? "ยืนยันแล้ว" :
+                          lookupResult.status === "pending" ? "รอดำเนินการ" :
+                          lookupResult.status === "proceed" ? "กำลังดำเนินการ" :
+                          lookupResult.status === "completed" ? "เสร็จสิ้น" : "ยกเลิก"}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
