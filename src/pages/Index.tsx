@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,26 @@ export default function Index() {
   const [lookupError, setLookupError] = useState("");
 
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Konami code: up up down down left right left right a b
+  useEffect(() => {
+    const konamiCode = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","a","b"];
+    let index = 0;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === konamiCode[index]) {
+        index++;
+        if (index === konamiCode.length) {
+          navigate("/admin/login");
+          index = 0;
+        }
+      } else {
+        index = 0;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [navigate]);
 
   const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0;
   const totalPrice = selectedVan ? days * selectedVan.price_per_day : 0;
@@ -179,7 +200,7 @@ export default function Index() {
       {/* Navbar */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <a href="/" className="flex items-center gap-2.5 cursor-pointer">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gold">
               <Crown className="w-4 h-4 text-primary" />
             </div>
@@ -187,7 +208,7 @@ export default function Index() {
               <p className="text-sm font-bold tracking-wide text-foreground">VAN ELITE</p>
               <p className="text-[10px] text-muted-foreground tracking-widest uppercase">Premium Rental</p>
             </div>
-          </div>
+          </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#fleet" className="hover:text-foreground transition-colors">Our Fleet</a>
             <a href="#why-us" className="hover:text-foreground transition-colors">Why Us</a>
