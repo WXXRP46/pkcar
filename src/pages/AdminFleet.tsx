@@ -9,11 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Wifi, Wind, Star, Users, Loader2, Eye, EyeOff, Leaf } from "lucide-react";
+import { Plus, Pencil, Wifi, Wind, Star, Users, Loader2, Eye, EyeOff, Leaf, Trash2, ImagePlus } from "lucide-react";
 
 type VanStatus = "available" | "maintenance" | "hidden";
+
+interface VanImage {
+  id: string;
+  image_url: string;
+  sort_order: number;
+}
 
 interface Van {
   id: string;
@@ -26,6 +32,7 @@ interface Van {
   features: { wifi: boolean; ac: boolean; vip_seats: boolean };
   status: VanStatus;
   co2_per_km: number | null;
+  images?: VanImage[];
 }
 
 const statusBadge: Record<VanStatus, string> = {
@@ -54,12 +61,23 @@ export default function AdminFleet() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<VanImage[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const { toast } = useToast();
 
   const fetchVans = useCallback(async () => {
     const { data } = await supabase.from("vans").select("*").order("created_at", { ascending: false });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setVans(((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean } })));
+    const vansData = ((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean } }));
+    
+    // Fetch images for all vans
+    const { data: imagesData } = await supabase.from("van_images").select("*").order("sort_order");
+    const imagesByVan: Record<string, VanImage[]> = {};
+    (imagesData ?? []).forEach((img: any) => {
+      if (!imagesByVan[img.van_id]) imagesByVan[img.van_id] = [];
+      imagesByVan[img.van_id].push(img);
+    });
+    
+    setVans(vansData.map(v => ({ ...v, images: imagesByVan[v.id] ?? [] })));
     setLoading(false);
   }, []);
 
@@ -69,6 +87,8 @@ export default function AdminFleet() {
     setEditingVan(null);
     setForm(emptyForm);
     setImageFile(null);
+    setAdditionalImages([]);
+    setNewImageFiles([]);
     setDialogOpen(true);
   };
 
@@ -86,7 +106,25 @@ export default function AdminFleet() {
       co2_per_km: van.co2_per_km ?? "",
     });
     setImageFile(null);
+    setAdditionalImages(van.images ?? []);
+    setNewImageFiles([]);
     setDialogOpen(true);
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop();
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("van-images").upload(path, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from("van-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const handleDeleteImage = async (imageId: string) => {
+    const { error } = await supabase.from("van_images").delete().eq("id", imageId);
+    if (!error) {
+      setAdditionalImages(prev => prev.filter(img => img.id !== imageId));
+    }
   };
 
   const handleSave = async () => {
@@ -95,24 +133,35 @@ export default function AdminFleet() {
       let image_url = form.image_url;
 
       if (imageFile) {
-        const ext = imageFile.name.split(".").pop();
-        const path = `${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("van-images").upload(path, imageFile);
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from("van-images").getPublicUrl(path);
-        image_url = data.publicUrl;
+        image_url = await uploadImage(imageFile);
       }
 
       const payload = { ...form, image_url, co2_per_km: form.co2_per_km === "" ? null : Number(form.co2_per_km) };
+
+      let vanId = editingVan?.id;
 
       if (editingVan) {
         const { error } = await supabase.from("vans").update(payload).eq("id", editingVan.id);
         if (error) throw error;
         toast({ title: "Van Updated", description: `${form.name} has been updated.` });
       } else {
-        const { error } = await supabase.from("vans").insert(payload);
+        const { data, error } = await supabase.from("vans").insert(payload).select().single();
         if (error) throw error;
+        vanId = (data as any).id;
         toast({ title: "Van Added", description: `${form.name} has been added to the fleet.` });
+      }
+
+      // Upload new additional images
+      if (vanId && newImageFiles.length > 0) {
+        const maxOrder = additionalImages.reduce((max, img) => Math.max(max, img.sort_order), 0);
+        for (let i = 0; i < newImageFiles.length; i++) {
+          const url = await uploadImage(newImageFiles[i]);
+          await supabase.from("van_images").insert({
+            van_id: vanId,
+            image_url: url,
+            sort_order: maxOrder + i + 1,
+          });
+        }
       }
 
       setDialogOpen(false);
@@ -131,6 +180,8 @@ export default function AdminFleet() {
       toast({ title: `Van ${newStatus === "available" ? "Visible" : "Hidden"}` });
     }
   };
+
+  const totalImages = (van: Van) => (van.image_url ? 1 : 0) + (van.images?.length ?? 0);
 
   return (
     <AdminLayout>
@@ -169,6 +220,11 @@ export default function AdminFleet() {
                       {van.status}
                     </span>
                   </div>
+                  {totalImages(van) > 1 && (
+                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                      {totalImages(van)} รูป
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
@@ -225,13 +281,68 @@ export default function AdminFleet() {
                <Input type="number" min={0} value={form.price_per_day} onChange={(e) => setForm(f => ({ ...f, price_per_day: Number(e.target.value) }))} />
              </div>
             <div className="space-y-1.5">
-              <Label>Image URL (or upload below)</Label>
+              <Label>รูปหลัก (URL หรืออัปโหลด)</Label>
               <Input value={form.image_url} onChange={(e) => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." />
             </div>
             <div className="space-y-1.5">
-              <Label>Upload Image</Label>
+              <Label>อัปโหลดรูปหลัก</Label>
               <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
             </div>
+
+            {/* Additional Images */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5"><ImagePlus className="w-4 h-4" /> รูปเพิ่มเติม (สำหรับ Carousel)</Label>
+              
+              {/* Existing additional images */}
+              {additionalImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {additionalImages.map((img) => (
+                    <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border">
+                      <img src={img.image_url} alt="" className="w-full h-20 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage(img.id)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Preview new files */}
+              {newImageFiles.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {newImageFiles.map((file, i) => (
+                    <div key={i} className="relative group rounded-lg overflow-hidden border border-dashed border-gold/50">
+                      <img src={URL.createObjectURL(file)} alt="" className="w-full h-20 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setNewImageFiles(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gold/80 text-primary text-[10px] text-center py-0.5">ใหม่</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setNewImageFiles(prev => [...prev, ...files]);
+                  e.target.value = "";
+                }}
+              />
+              <p className="text-xs text-muted-foreground">เลือกหลายรูปได้ ลูกค้าจะเห็นเป็น Carousel เลื่อนดูรูป</p>
+            </div>
+
             <div className="space-y-1.5">
               <Label>Description</Label>
               <Textarea value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} rows={3} placeholder="Van description..." />

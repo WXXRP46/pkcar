@@ -97,6 +97,38 @@ export type Database = {
         }
         Relationships: []
       }
+      van_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+          van_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          van_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          van_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "van_images_van_id_fkey"
+            columns: ["van_id"]
+            isOneToOne: false
+            referencedRelation: "vans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vans: {
         Row: {
           co2_per_km: number | null
