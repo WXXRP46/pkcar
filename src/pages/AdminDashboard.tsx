@@ -20,6 +20,7 @@ interface Stats {
 
 interface RecentBooking {
   id: string;
+  booking_code: string | null;
   customer_name: string;
   customer_phone: string;
   start_date: string;
@@ -139,8 +140,9 @@ export default function AdminDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Customer</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Van</th>
+                     <th className="text-left p-3 font-medium text-muted-foreground">Code</th>
+                     <th className="text-left p-3 font-medium text-muted-foreground">Customer</th>
+                     <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Van</th>
                     <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Dates</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Total</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
@@ -149,18 +151,22 @@ export default function AdminDashboard() {
                 <tbody>
                   {loading ? Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b">
-                      <td className="p-3"><Skeleton className="h-4 w-32" /></td>
-                      <td className="p-3 hidden sm:table-cell"><Skeleton className="h-4 w-24" /></td>
+                     <td className="p-3"><Skeleton className="h-4 w-16" /></td>
+                       <td className="p-3"><Skeleton className="h-4 w-32" /></td>
+                       <td className="p-3 hidden sm:table-cell"><Skeleton className="h-4 w-24" /></td>
                       <td className="p-3 hidden md:table-cell"><Skeleton className="h-4 w-28" /></td>
                       <td className="p-3"><Skeleton className="h-4 w-16" /></td>
                       <td className="p-3"><Skeleton className="h-5 w-20 rounded-full" /></td>
                     </tr>
                   )) : recentBookings.map((booking) => (
                     <tr key={booking.id} className="border-b hover:bg-muted/30 transition-colors">
-                      <td className="p-3">
-                        <p className="font-medium">{booking.customer_name}</p>
-                        <p className="text-xs text-muted-foreground">{booking.customer_phone}</p>
-                      </td>
+                     <td className="p-3">
+                         <span className="font-mono text-xs font-semibold tracking-wider text-gold">{booking.booking_code ?? "—"}</span>
+                       </td>
+                       <td className="p-3">
+                         <p className="font-medium">{booking.customer_name}</p>
+                         <p className="text-xs text-muted-foreground">{booking.customer_phone}</p>
+                       </td>
                       <td className="p-3 hidden sm:table-cell text-muted-foreground">{booking.vans?.name ?? "—"}</td>
                       <td className="p-3 hidden md:table-cell text-muted-foreground text-xs">
                         {format(new Date(booking.start_date), "d MMM")} – {format(new Date(booking.end_date), "d MMM yyyy")}
@@ -174,7 +180,7 @@ export default function AdminDashboard() {
                     </tr>
                   ))}
                   {!loading && recentBookings.length === 0 && (
-                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No bookings yet</td></tr>
+                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No bookings yet</td></tr>
                   )}
                 </tbody>
               </table>

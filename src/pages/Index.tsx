@@ -14,10 +14,16 @@ import { format, differenceInDays, addDays, isAfter } from "date-fns";
 import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
   CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf,
-  Search, Copy, Loader2
+  Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon
 } from "lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
+
+interface VanImage {
+  id: string;
+  image_url: string;
+  sort_order: number;
+}
 
 interface Van {
   id: string;
@@ -30,6 +36,7 @@ interface Van {
   features: { wifi: boolean; ac: boolean; vip_seats: boolean };
   status: string;
   co2_per_km: number | null;
+  images: VanImage[];
 }
 
 const CONTACT_LINE = "https://line.me/ti/p/your-line-id";
@@ -68,15 +75,26 @@ export default function Index() {
   const phoneRegex = /^(0[689]\d{8}|0[2-9]\d{7,8})$/;
 
   useEffect(() => {
-    supabase
-      .from("vans")
-      .select("*")
-      .eq("status", "available")
-      .then(({ data }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setVans(((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean } })));
-        setLoading(false);
-      });
+    const load = async () => {
+      const { data } = await supabase.from("vans").select("*").eq("status", "available");
+      const vansRaw = ((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean }, images: [] as VanImage[] }));
+      
+      // Fetch additional images
+      const vanIds = vansRaw.map(v => v.id);
+      if (vanIds.length > 0) {
+        const { data: imagesData } = await supabase.from("van_images").select("*").in("van_id", vanIds).order("sort_order");
+        const imagesByVan: Record<string, VanImage[]> = {};
+        (imagesData ?? []).forEach((img: any) => {
+          if (!imagesByVan[img.van_id]) imagesByVan[img.van_id] = [];
+          imagesByVan[img.van_id].push(img);
+        });
+        vansRaw.forEach(v => { v.images = imagesByVan[v.id] ?? []; });
+      }
+      
+      setVans(vansRaw);
+      setLoading(false);
+    };
+    load();
   }, []);
 
   const openDetail = (van: Van) => {
@@ -293,25 +311,7 @@ export default function Index() {
                 onClick={() => openDetail(van)}
               >
                 <div className="bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-400 border border-border hover:border-gold/30">
-                  <div className="relative h-52 overflow-hidden">
-                    {van.image_url ? (
-                      <img
-                        src={van.image_url}
-                        alt={van.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">No Image</div>
-                    )}
-                    {van.features.vip_seats && (
-                      <div className="absolute top-3 left-3">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gold text-primary">
-                          <Star className="w-3 h-3" /> VIP
-                        </span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
+                  <VanImageCarousel van={van} height="h-52" />
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -386,21 +386,9 @@ export default function Index() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           {selectedVan && (
             <>
-              <div className="relative h-64 overflow-hidden rounded-t-lg">
-                {selectedVan.image_url ? (
-                  <img src={selectedVan.image_url} alt={selectedVan.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-muted" />
-                )}
-                {selectedVan.features.vip_seats && (
-                  <div className="absolute top-4 left-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gold text-primary">
-                      <Star className="w-3 h-3" /> VIP
-                    </span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
+              <div className="relative">
+                <VanImageCarousel van={selectedVan} height="h-64" rounded="rounded-t-lg" />
+                <div className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none">
                   <h2 className="text-2xl font-bold text-white">{selectedVan.name}</h2>
                   <p className="text-white/75 text-sm">{selectedVan.model}</p>
                 </div>
@@ -743,6 +731,65 @@ export default function Index() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Image carousel for van cards and detail
+function VanImageCarousel({ van, height = "h-52", rounded = "" }: { van: Van; height?: string; rounded?: string }) {
+  const [current, setCurrent] = useState(0);
+  const allImages = [
+    ...(van.image_url ? [van.image_url] : []),
+    ...van.images.map(img => img.image_url),
+  ];
+
+  if (allImages.length === 0) {
+    return (
+      <div className={`relative ${height} ${rounded} overflow-hidden bg-muted flex items-center justify-center text-muted-foreground`}>
+        No Image
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative ${height} ${rounded} overflow-hidden group/carousel`}>
+      <img src={allImages[current]} alt={van.name} className="w-full h-full object-cover transition-transform duration-500" />
+      {van.features.vip_seats && (
+        <div className="absolute top-3 left-3 z-10">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gold text-primary">
+            <Star className="w-3 h-3" /> VIP
+          </span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+      {allImages.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setCurrent(c => (c - 1 + allImages.length) % allImages.length); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setCurrent(c => (c + 1) % allImages.length); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
+          >
+            <ChevronRightIcon className="w-4 h-4" />
+          </button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+            {allImages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-white w-3" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
