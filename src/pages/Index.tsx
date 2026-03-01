@@ -66,6 +66,7 @@ export default function Index() {
   const [lookupOpen, setLookupOpen] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState<any | null>(null);
+  const [lookupResults, setLookupResults] = useState<any[]>([]);
   const [lookupError, setLookupError] = useState("");
 
   const { toast } = useToast();
@@ -130,19 +131,38 @@ export default function Index() {
   };
 
   const handleLookup = async () => {
-    if (!lookupCode.trim()) return;
+    const q = lookupCode.trim();
+    if (!q) return;
     setLookupLoading(true);
     setLookupError("");
     setLookupResult(null);
-    const { data, error } = await supabase
-      .from("bookings")
-      .select("*, vans(name, model, image_url)")
-      .eq("booking_code", lookupCode.trim().toUpperCase())
-      .maybeSingle();
-    if (error || !data) {
-      setLookupError("ไม่พบการจองด้วยรหัสนี้ กรุณาตรวจสอบอีกครั้ง");
+    setLookupResults([]);
+
+    // Detect if input looks like a phone number (starts with 0 and digits)
+    const isPhone = /^0\d+$/.test(q.replace(/[-\s]/g, ""));
+
+    if (isPhone) {
+      const { data } = await supabase
+        .from("bookings")
+        .select("*, vans(name, model, image_url)")
+        .eq("customer_phone", q.replace(/[-\s]/g, ""))
+        .order("created_at", { ascending: false });
+      if (!data || data.length === 0) {
+        setLookupError("ไม่พบการจองด้วยเบอร์โทรนี้ กรุณาตรวจสอบอีกครั้ง");
+      } else {
+        setLookupResults(data);
+      }
     } else {
-      setLookupResult(data);
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*, vans(name, model, image_url)")
+        .eq("booking_code", q.toUpperCase())
+        .maybeSingle();
+      if (error || !data) {
+        setLookupError("ไม่พบการจองด้วยรหัสนี้ กรุณาตรวจสอบอีกครั้ง");
+      } else {
+        setLookupResult(data);
+      }
     }
     setLookupLoading(false);
   };
@@ -655,8 +675,8 @@ export default function Index() {
       </Dialog>
 
       {/* Booking Lookup Dialog */}
-      <Dialog open={lookupOpen} onOpenChange={(open) => { setLookupOpen(open); if (!open) { setLookupResult(null); setLookupError(""); setLookupCode(""); } }}>
-        <DialogContent className="max-w-md">
+      <Dialog open={lookupOpen} onOpenChange={(open) => { setLookupOpen(open); if (!open) { setLookupResult(null); setLookupResults([]); setLookupError(""); setLookupCode(""); } }}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Search className="w-5 h-5 text-gold" />
@@ -666,7 +686,7 @@ export default function Index() {
           <div className="space-y-4 py-2">
             <div className="flex gap-2">
               <Input
-                placeholder="กรอกรหัสการจอง เช่น A1B2C3"
+                placeholder="กรอกรหัสการจอง หรือ เบอร์โทรศัพท์"
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && handleLookup()}
@@ -680,6 +700,7 @@ export default function Index() {
                 {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">ค้นหาด้วยรหัสการจอง (เช่น A1B2C3) หรือเบอร์โทรศัพท์ (เช่น 0891234567)</p>
 
             {lookupError && (
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">
@@ -687,8 +708,49 @@ export default function Index() {
               </motion.p>
             )}
 
+            {/* Multiple results from phone search */}
+            {lookupResults.length > 0 && !lookupResult && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                <p className="text-sm font-medium text-foreground">พบ {lookupResults.length} รายการจอง</p>
+                {lookupResults.map((b: any) => (
+                  <div
+                    key={b.id}
+                    onClick={() => setLookupResult(b)}
+                    className="p-3 rounded-lg border border-border hover:border-gold/40 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-mono text-xs font-bold tracking-wider text-gold">{b.booking_code ?? "—"}</span>
+                        <p className="text-sm font-medium mt-0.5">{b.vans?.name ?? "Van"}</p>
+                      </div>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-xs font-semibold",
+                        b.status === "confirmed" && "bg-green-100 text-green-700",
+                        b.status === "pending" && "bg-yellow-100 text-yellow-700",
+                        b.status === "proceed" && "bg-purple-100 text-purple-700",
+                        b.status === "completed" && "bg-blue-100 text-blue-700",
+                        b.status === "cancelled" && "bg-red-100 text-red-700",
+                      )}>
+                        {b.status === "confirmed" ? "ยืนยันแล้ว" :
+                         b.status === "pending" ? "รอดำเนินการ" :
+                         b.status === "proceed" ? "กำลังดำเนินการ" :
+                         b.status === "completed" ? "เสร็จสิ้น" : "ยกเลิก"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{b.start_date} → {b.end_date} • ฿{Number(b.total_price).toLocaleString()}</p>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {/* Single result detail */}
             {lookupResult && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                {lookupResults.length > 0 && (
+                  <button onClick={() => setLookupResult(null)} className="text-xs text-gold hover:underline flex items-center gap-1">
+                    <ChevronLeft className="w-3 h-3" /> กลับไปรายการ
+                  </button>
+                )}
                 <div className="rounded-xl overflow-hidden border border-border">
                   {lookupResult.vans?.image_url && (
                     <img src={lookupResult.vans.image_url} alt={lookupResult.vans.name} className="w-full h-40 object-cover" />
@@ -714,6 +776,10 @@ export default function Index() {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">รหัสการจอง</p>
+                        <p className="font-mono font-bold text-gold tracking-wider">{lookupResult.booking_code ?? "—"}</p>
+                      </div>
                       <div>
                         <p className="text-xs text-muted-foreground">ชื่อผู้จอง</p>
                         <p className="font-medium text-foreground">{lookupResult.customer_name}</p>
