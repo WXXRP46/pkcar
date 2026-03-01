@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col" style={{ background: "hsl(var(--primary))" }}>
         {/* Logo */}
-        <div className="p-6 border-b" style={{ borderColor: "hsl(215 20% 18%)" }}>
+        <a href="/" className="p-6 border-b block hover:opacity-80 transition-opacity" style={{ borderColor: "hsl(215 20% 18%)" }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--gold))" }}>
               <Crown className="w-4 h-4" style={{ color: "hsl(var(--primary))" }} />
@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <p className="text-xs" style={{ color: "hsl(215 16% 50%)" }}>Admin Panel</p>
             </div>
           </div>
-        </div>
+        </a>
 
         {/* Nav */}
         <nav className="flex-1 p-4 space-y-1">
@@ -84,12 +84,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 overflow-y-auto">
         {/* Mobile top bar */}
         <div className="md:hidden flex items-center justify-between p-4 border-b bg-card shadow-sm">
-          <div className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--gold))" }}>
               <Crown className="w-3.5 h-3.5" style={{ color: "hsl(var(--primary))" }} />
             </div>
-            <span className="font-semibold text-sm">Van Elite Admin</span>
-          </div>
+            <span className="font-semibold text-sm">Van Elite</span>
+          </a>
           <div className="flex gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;

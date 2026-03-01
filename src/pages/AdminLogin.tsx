@@ -29,7 +29,17 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "hsl(var(--primary))" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "hsl(var(--primary))" }}>
+      <a href="/" className="flex items-center gap-2.5 p-5 cursor-pointer w-fit">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--gold))" }}>
+          <Shield className="w-4 h-4" style={{ color: "hsl(var(--primary))" }} />
+        </div>
+        <div>
+          <p className="text-sm font-bold tracking-wide text-white">VAN ELITE</p>
+          <p className="text-[10px] tracking-widest uppercase" style={{ color: "hsl(215 16% 50%)" }}>Premium Rental</p>
+        </div>
+      </a>
+      <div className="flex-1 flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,6 +111,7 @@ export default function AdminLogin() {
           </p>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }
