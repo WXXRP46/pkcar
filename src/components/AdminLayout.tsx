@@ -23,14 +23,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col" style={{ background: "hsl(var(--primary))" }}>
         {/* Logo */}
-        <a href="/" className="p-6 border-b block hover:opacity-80 transition-opacity" style={{ borderColor: "hsl(215 20% 18%)" }}>
+        <a href="/" className="p-6 border-b block hover:opacity-80 transition-opacity" style={{ borderColor: "hsl(200 25% 20%)" }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--gold))" }}>
               <Crown className="w-4 h-4" style={{ color: "hsl(var(--primary))" }} />
             </div>
             <div>
               <p className="text-xs font-semibold text-gold">VAN ELITE</p>
-              <p className="text-xs" style={{ color: "hsl(215 16% 50%)" }}>Admin Panel</p>
+              <p className="text-xs" style={{ color: "hsl(200 14% 50%)" }}>Admin Panel</p>
             </div>
           </div>
         </a>
@@ -58,14 +58,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* User */}
-        <div className="p-4 border-t" style={{ borderColor: "hsl(215 20% 18%)" }}>
+        <div className="p-4 border-t" style={{ borderColor: "hsl(200 25% 20%)" }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(var(--gold) / 0.15)", color: "hsl(var(--gold))", border: "1px solid hsl(var(--gold) / 0.3)" }}>
               {profile?.full_name?.[0] ?? "A"}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name ?? "Admin"}</p>
-              <p className="text-xs capitalize" style={{ color: "hsl(215 16% 50%)" }}>{profile?.role}</p>
+              <p className="text-xs capitalize" style={{ color: "hsl(200 14% 50%)" }}>{profile?.role}</p>
             </div>
           </div>
           <Button

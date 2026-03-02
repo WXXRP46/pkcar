@@ -255,7 +255,7 @@ export default function Index() {
           alt="Luxury van"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, hsl(215 28% 6% / 0.92) 0%, hsl(215 28% 6% / 0.70) 60%, hsl(215 28% 6% / 0.20) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, hsl(200 35% 8% / 0.92) 0%, hsl(200 35% 8% / 0.70) 60%, hsl(200 35% 8% / 0.20) 100%)" }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-16">
           <motion.div
@@ -272,7 +272,7 @@ export default function Index() {
               <span className="text-gold">Executive</span><br />
               Comfort
             </h1>
-            <p className="text-base sm:text-lg mb-8" style={{ color: "hsl(210 20% 75%)" }}>
+            <p className="text-base sm:text-lg mb-8" style={{ color: "hsl(195 20% 75%)" }}>
               Luxury vans with professional drivers for corporate events, airport transfers, and VIP journeys across Thailand.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -322,7 +322,7 @@ export default function Index() {
                   <item.icon className="w-6 h-6 text-gold" />
                 </div>
                 <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "hsl(210 20% 60%)" }}>{item.desc}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "hsl(195 20% 60%)" }}>{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -410,11 +410,11 @@ export default function Index() {
             </div>
             <div>
               <p className="text-sm font-bold text-white">VAN ELITE</p>
-              <p className="text-[10px]" style={{ color: "hsl(215 16% 50%)" }}>Premium Van Rental</p>
+              <p className="text-[10px]" style={{ color: "hsl(200 14% 50%)" }}>Premium Van Rental</p>
             </div>
           </div>
-          <p className="text-xs" style={{ color: "hsl(215 16% 45%)" }}>© 2024 Van Elite. All rights reserved.</p>
-          <div className="flex gap-4 text-xs" style={{ color: "hsl(215 16% 50%)" }}>
+          <p className="text-xs" style={{ color: "hsl(200 14% 45%)" }}>© 2024 Van Elite. All rights reserved.</p>
+          <div className="flex gap-4 text-xs" style={{ color: "hsl(200 14% 50%)" }}>
             <a href={CONTACT_LINE} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">LINE</a>
             <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">WhatsApp</a>
             <a href="/admin/login" className="hover:text-gold transition-colors">Admin</a>

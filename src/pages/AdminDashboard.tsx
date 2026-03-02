@@ -29,7 +29,7 @@ interface BookingRaw {
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b",
   confirmed: "#22c55e",
-  proceed: "#a855f7",
+  proceed: "#0AC4E0",
   completed: "#3b82f6",
   cancelled: "#ef4444",
 };
@@ -150,10 +150,10 @@ export default function AdminDashboard() {
   })();
 
   const statCards = [
-    { label: "Today's Bookings", value: stats?.todayBookings ?? 0, icon: CalendarCheck, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Today's Bookings", value: stats?.todayBookings ?? 0, icon: CalendarCheck, color: "text-cyan-600", bg: "bg-cyan-50" },
     { label: "Pending Approvals", value: stats?.pendingApprovals ?? 0, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
     { label: "Active Rentals", value: stats?.activeRentals ?? 0, icon: Car, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Total Revenue", value: `฿${(stats?.totalRevenue ?? 0).toLocaleString()}`, icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-50", isText: true },
+    { label: "Total Revenue", value: `฿${(stats?.totalRevenue ?? 0).toLocaleString()}`, icon: TrendingUp, color: "text-cyan-700", bg: "bg-cyan-50", isText: true },
   ];
 
   return (
@@ -203,15 +203,15 @@ export default function AdminDashboard() {
                   <AreaChart data={monthlyRevenue}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#0AC4E0" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0AC4E0" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `฿${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => [`฿${v.toLocaleString()}`, "รายได้"]} />
-                    <Area type="monotone" dataKey="revenue" stroke="#a855f7" fill="url(#colorRevenue)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="revenue" stroke="#0AC4E0" fill="url(#colorRevenue)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
                     <Tooltip formatter={(v: number) => [v, "รายการจอง"]} />
-                    <Bar dataKey="bookings" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="bookings" fill="#0AC4E0" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
                     <XAxis type="number" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" width={90} />
                     <Tooltip formatter={(v: number) => [v, "จำนวนจอง"]} />
-                    <Bar dataKey="bookings" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="bookings" fill="#0AC4E0" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
