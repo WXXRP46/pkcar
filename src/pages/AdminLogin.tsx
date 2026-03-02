@@ -36,7 +36,7 @@ export default function AdminLogin() {
         </div>
         <div>
           <p className="text-sm font-bold tracking-wide text-white">VAN ELITE</p>
-          <p className="text-[10px] tracking-widest uppercase" style={{ color: "hsl(215 16% 50%)" }}>Premium Rental</p>
+          <p className="text-[10px] tracking-widest uppercase" style={{ color: "hsl(200 14% 50%)" }}>Premium Rental</p>
         </div>
       </a>
       <div className="flex-1 flex items-center justify-center">
@@ -52,12 +52,12 @@ export default function AdminLogin() {
               <Shield className="w-8 h-8 text-gold" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-1">Admin Portal</h1>
-            <p className="text-sm" style={{ color: "hsl(215 16% 60%)" }}>Van Rental Management System</p>
+            <p className="text-sm" style={{ color: "hsl(200 14% 60%)" }}>Van Rental Management System</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium" style={{ color: "hsl(210 30% 85%)" }}>
+              <Label htmlFor="email" className="text-sm font-medium" style={{ color: "hsl(195 25% 85%)" }}>
                 Email Address
               </Label>
               <Input
@@ -72,7 +72,7 @@ export default function AdminLogin() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium" style={{ color: "hsl(210 30% 85%)" }}>
+              <Label htmlFor="password" className="text-sm font-medium" style={{ color: "hsl(195 25% 85%)" }}>
                 Password
               </Label>
               <div className="relative">
@@ -106,7 +106,7 @@ export default function AdminLogin() {
             </Button>
           </form>
 
-          <p className="text-center text-xs mt-6" style={{ color: "hsl(215 16% 45%)" }}>
+          <p className="text-center text-xs mt-6" style={{ color: "hsl(200 14% 45%)" }}>
             Authorized personnel only
           </p>
         </div>
