@@ -16,8 +16,7 @@ const NotFound = () => {
           <Crown className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <p className="text-sm font-bold tracking-wide text-foreground">VAN ELITE</p>
-          <p className="text-[10px] text-muted-foreground tracking-widest uppercase">Premium Rental</p>
+          <p className="text-sm font-bold tracking-wide text-foreground">GOLDMINE_TRAVEL</p>
         </div>
       </a>
       <div className="flex-1 flex items-center justify-center">

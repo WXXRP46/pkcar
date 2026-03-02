@@ -224,10 +224,7 @@ export default function Index() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gold">
               <Crown className="w-4 h-4 text-primary" />
             </div>
-            <div>
-              <p className="text-sm font-bold tracking-wide text-foreground">VAN ELITE</p>
-              <p className="text-[10px] text-muted-foreground tracking-widest uppercase">Premium Rental</p>
-            </div>
+            <p className="text-sm font-bold tracking-wide text-foreground">GOLDMINE_TRAVEL</p>
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#fleet" className="hover:text-foreground transition-colors">Our Fleet</a>
@@ -302,7 +299,7 @@ export default function Index() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">Our Commitment</p>
-            <h2 className="text-3xl font-bold text-white">Why Choose Van Elite?</h2>
+            <h2 className="text-3xl font-bold text-white">Why Choose GOLDMINE_TRAVEL?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
@@ -408,12 +405,9 @@ export default function Index() {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gold">
               <Crown className="w-4 h-4 text-primary" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-white">VAN ELITE</p>
-              <p className="text-[10px]" style={{ color: "hsl(200 14% 50%)" }}>Premium Van Rental</p>
-            </div>
+            <p className="text-sm font-bold text-white">GOLDMINE_TRAVEL</p>
           </div>
-          <p className="text-xs" style={{ color: "hsl(200 14% 45%)" }}>© 2024 Van Elite. All rights reserved.</p>
+          <p className="text-xs" style={{ color: "hsl(200 14% 45%)" }}>© 2024 GOLDMINE_TRAVEL. All rights reserved.</p>
           <div className="flex gap-4 text-xs" style={{ color: "hsl(200 14% 50%)" }}>
             <a href={CONTACT_LINE} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">LINE</a>
             <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">WhatsApp</a>

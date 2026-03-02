@@ -28,10 +28,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--gold))" }}>
               <Crown className="w-4 h-4" style={{ color: "hsl(var(--primary))" }} />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-gold">VAN ELITE</p>
-              <p className="text-xs" style={{ color: "hsl(200 14% 50%)" }}>Admin Panel</p>
-            </div>
+            <p className="text-xs font-semibold text-gold">GOLDMINE_TRAVEL</p>
           </div>
         </a>
 
@@ -88,7 +85,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--gold))" }}>
               <Crown className="w-3.5 h-3.5" style={{ color: "hsl(var(--primary))" }} />
             </div>
-            <span className="font-semibold text-sm">Van Elite</span>
+            <span className="font-semibold text-sm">GOLDMINE_TRAVEL</span>
           </a>
           <div className="flex gap-2">
             {navItems.map((item) => {
