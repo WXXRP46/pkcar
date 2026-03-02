@@ -38,6 +38,7 @@ interface Van {
   status: string;
   co2_per_km: number | null;
   images: VanImage[];
+  busy: boolean;
 }
 
 const CONTACT_LINE = "https://line.me/ti/p/your-line-id";
@@ -99,9 +100,8 @@ export default function Index() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from("vans").select("*").eq("status", "available");
-      const vansRaw = ((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean }, images: [] as VanImage[] }));
+      const vansRaw = ((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean }, images: [] as VanImage[], busy: false }));
       
-      // Fetch additional images
       const vanIds = vansRaw.map(v => v.id);
       if (vanIds.length > 0) {
         const { data: imagesData } = await supabase.from("van_images").select("*").in("van_id", vanIds).order("sort_order");
@@ -111,6 +111,15 @@ export default function Index() {
           imagesByVan[img.van_id].push(img);
         });
         vansRaw.forEach(v => { v.images = imagesByVan[v.id] ?? []; });
+
+        // Mark vans as busy if they have confirmed/proceed bookings
+        const { data: activeBookings } = await supabase
+          .from("bookings")
+          .select("van_id")
+          .in("van_id", vanIds)
+          .in("status", ["confirmed", "proceed"]);
+        const busyVanIds = new Set((activeBookings ?? []).map((b: any) => b.van_id));
+        vansRaw.forEach(v => { v.busy = busyVanIds.has(v.id); });
       }
       
       setVans(vansRaw);
@@ -348,8 +357,15 @@ export default function Index() {
                 className="group cursor-pointer"
                 onClick={() => openDetail(van)}
               >
-                <div className="bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-400 border border-border hover:border-gold/30">
-                  <VanImageCarousel van={van} height="h-52" />
+                <div className={cn("bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-400 border border-border hover:border-gold/30", van.busy && "opacity-75")}>
+                  <div className="relative">
+                    <VanImageCarousel van={van} height="h-52" />
+                    {van.busy && (
+                      <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                        ไม่ว่าง
+                      </div>
+                    )}
+                  </div>
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -385,10 +401,11 @@ export default function Index() {
 
                     <Button
                       className="w-full h-10 text-sm font-semibold"
-                      style={{ background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+                      style={{ background: van.busy ? "hsl(var(--muted))" : "hsl(var(--primary))", color: van.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary-foreground))" }}
+                      disabled={van.busy}
                       onClick={(e) => { e.stopPropagation(); openBooking(van); }}
                     >
-                      Book This Van
+                      {van.busy ? "ไม่ว่าง" : "Book This Van"}
                     </Button>
                   </div>
                 </div>
