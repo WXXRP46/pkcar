@@ -35,8 +35,7 @@ export default function AdminLogin() {
           <Shield className="w-4 h-4" style={{ color: "hsl(var(--primary))" }} />
         </div>
         <div>
-          <p className="text-sm font-bold tracking-wide text-white">VAN ELITE</p>
-          <p className="text-[10px] tracking-widest uppercase" style={{ color: "hsl(200 14% 50%)" }}>Premium Rental</p>
+          <p className="text-sm font-bold tracking-wide text-white">GOLDMINE_TRAVEL</p>
         </div>
       </a>
       <div className="flex-1 flex items-center justify-center">
