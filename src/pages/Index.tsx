@@ -39,6 +39,7 @@ interface Van {
   co2_per_km: number | null;
   images: VanImage[];
   busy: boolean;
+  driver?: { name: string; photo_url: string | null; experience_years: number; description: string | null } | null;
 }
 
 const CONTACT_LINE = "https://line.me/ti/p/your-line-id";
@@ -120,6 +121,14 @@ export default function Index() {
           .in("status", ["confirmed", "proceed"]);
         const busyVanIds = new Set((activeBookings ?? []).map((b: any) => b.van_id));
         vansRaw.forEach(v => { v.busy = busyVanIds.has(v.id); });
+
+        // Fetch drivers for each van
+        const { data: driversData } = await (supabase as any).from("drivers").select("van_id, name, photo_url, experience_years, description").in("van_id", vanIds);
+        const driversByVan: Record<string, any> = {};
+        (driversData ?? []).forEach((d: any) => {
+          if (d.van_id) driversByVan[d.van_id] = d;
+        });
+        vansRaw.forEach(v => { v.driver = driversByVan[v.id] ?? null; });
       }
       
       setVans(vansRaw);
@@ -399,6 +408,18 @@ export default function Index() {
                       )}
                     </div>
 
+                    {/* Driver badge on card */}
+                    {van.driver && (
+                      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                        {van.driver.photo_url ? (
+                          <img src={van.driver.photo_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                        ) : (
+                          <User className="w-3.5 h-3.5" />
+                        )}
+                        <span>คนขับ: {van.driver.name}</span>
+                      </div>
+                    )}
+
                     <Button
                       className="w-full h-10 text-sm font-semibold"
                       style={{ background: van.busy ? "hsl(var(--muted))" : "hsl(var(--primary))", color: van.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary-foreground))" }}
@@ -467,12 +488,36 @@ export default function Index() {
                 {selectedVan.description && (
                   <p className="text-sm text-muted-foreground leading-relaxed">{selectedVan.description}</p>
                 )}
+                {/* Driver Info */}
+                {selectedVan.driver && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
+                    {selectedVan.driver.photo_url ? (
+                      <img src={selectedVan.driver.photo_url} alt={selectedVan.driver.name} className="w-12 h-12 rounded-full object-cover border-2 border-gold/30" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gold/15 text-gold font-bold">
+                        {selectedVan.driver.name[0]}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-gold" /> คนขับ: {selectedVan.driver.name}
+                      </p>
+                      {selectedVan.driver.experience_years > 0 && (
+                        <p className="text-xs text-muted-foreground">ประสบการณ์ {selectedVan.driver.experience_years} ปี</p>
+                      )}
+                      {selectedVan.driver.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedVan.driver.description}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <Button
                   className="w-full h-12 text-sm font-semibold"
-                  style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
+                  style={{ background: selectedVan.busy ? "hsl(var(--muted))" : "hsl(var(--gold))", color: selectedVan.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))" }}
+                  disabled={selectedVan.busy}
                   onClick={() => openBooking(selectedVan)}
                 >
-                  Book Now <ArrowRight className="w-4 h-4 ml-2" />
+                  {selectedVan.busy ? "ไม่ว่าง" : "Book Now"} {!selectedVan.busy && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               </div>
             </>
