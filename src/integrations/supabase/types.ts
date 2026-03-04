@@ -73,6 +73,50 @@ export type Database = {
           },
         ]
       }
+      drivers: {
+        Row: {
+          created_at: string
+          description: string | null
+          experience_years: number
+          id: string
+          license_number: string | null
+          name: string
+          phone: string | null
+          photo_url: string | null
+          van_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          experience_years?: number
+          id?: string
+          license_number?: string | null
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          van_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          experience_years?: number
+          id?: string
+          license_number?: string | null
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          van_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_van_id_fkey"
+            columns: ["van_id"]
+            isOneToOne: false
+            referencedRelation: "vans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
