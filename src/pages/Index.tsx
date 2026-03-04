@@ -15,10 +15,11 @@ import { format, differenceInDays, addDays, isAfter } from "date-fns";
 import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
   CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf,
-  Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon
+  Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon, Globe
 } from "lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface VanImage {
   id: string;
@@ -45,7 +46,19 @@ interface Van {
 const CONTACT_LINE = "https://line.me/ti/p/your-line-id";
 const CONTACT_WHATSAPP = "https://wa.me/66800000000";
 
+function getStatusText(status: string, t: (key: any) => string) {
+  switch (status) {
+    case "confirmed": return t("status.confirmed");
+    case "pending": return t("status.pending");
+    case "proceed": return t("status.proceed");
+    case "completed": return t("status.completed");
+    case "cancelled": return t("status.cancelled");
+    default: return status;
+  }
+}
+
 export default function Index() {
+  const { t, lang, toggleLang } = useLanguage();
   const [vans, setVans] = useState<Van[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVan, setSelectedVan] = useState<Van | null>(null);
@@ -63,7 +76,6 @@ export default function Index() {
   const [submitting, setSubmitting] = useState(false);
   const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number } | null>(null);
 
-  // Booking lookup
   const [lookupCode, setLookupCode] = useState("");
   const [lookupOpen, setLookupOpen] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -74,20 +86,15 @@ export default function Index() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Konami code: up up down down left right left right a b
+  // Konami code
   useEffect(() => {
     const konamiCode = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","a","b"];
     let index = 0;
     const handler = (e: KeyboardEvent) => {
       if (e.key === konamiCode[index]) {
         index++;
-        if (index === konamiCode.length) {
-          navigate("/admin/login");
-          index = 0;
-        }
-      } else {
-        index = 0;
-      }
+        if (index === konamiCode.length) { navigate("/admin/login"); index = 0; }
+      } else { index = 0; }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -95,7 +102,6 @@ export default function Index() {
 
   const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0;
   const totalPrice = selectedVan ? days * selectedVan.price_per_day : 0;
-
   const phoneRegex = /^(0[689]\d{8}|0[2-9]\d{7,8})$/;
 
   useEffect(() => {
@@ -113,21 +119,14 @@ export default function Index() {
         });
         vansRaw.forEach(v => { v.images = imagesByVan[v.id] ?? []; });
 
-        // Mark vans as busy if they have confirmed/proceed bookings
         const { data: activeBookings } = await supabase
-          .from("bookings")
-          .select("van_id")
-          .in("van_id", vanIds)
-          .in("status", ["confirmed", "proceed"]);
+          .from("bookings").select("van_id").in("van_id", vanIds).in("status", ["confirmed", "proceed"]);
         const busyVanIds = new Set((activeBookings ?? []).map((b: any) => b.van_id));
         vansRaw.forEach(v => { v.busy = busyVanIds.has(v.id); });
 
-        // Fetch drivers for each van
         const { data: driversData } = await (supabase as any).from("drivers").select("van_id, name, photo_url, experience_years, description").in("van_id", vanIds);
         const driversByVan: Record<string, any> = {};
-        (driversData ?? []).forEach((d: any) => {
-          if (d.van_id) driversByVan[d.van_id] = d;
-        });
+        (driversData ?? []).forEach((d: any) => { if (d.van_id) driversByVan[d.van_id] = d; });
         vansRaw.forEach(v => { v.driver = driversByVan[v.id] ?? null; });
       }
       
@@ -137,16 +136,8 @@ export default function Index() {
     load();
   }, []);
 
-  const openDetail = (van: Van) => {
-    setSelectedVan(van);
-    setDetailOpen(true);
-  };
-
-  const openBooking = (van: Van) => {
-    setSelectedVan(van);
-    setDetailOpen(false);
-    setBookingOpen(true);
-  };
+  const openDetail = (van: Van) => { setSelectedVan(van); setDetailOpen(true); };
+  const openBooking = (van: Van) => { setSelectedVan(van); setDetailOpen(false); setBookingOpen(true); };
 
   const handleLookup = async () => {
     const q = lookupCode.trim();
@@ -156,31 +147,15 @@ export default function Index() {
     setLookupResult(null);
     setLookupResults([]);
 
-    // Detect if input looks like a phone number (starts with 0 and digits)
     const isPhone = /^0\d+$/.test(q.replace(/[-\s]/g, ""));
-
     if (isPhone) {
-      const { data } = await supabase
-        .from("bookings")
-        .select("*, vans(name, model, image_url)")
-        .eq("customer_phone", q.replace(/[-\s]/g, ""))
-        .order("created_at", { ascending: false });
-      if (!data || data.length === 0) {
-        setLookupError("ไม่พบการจองด้วยเบอร์โทรนี้ กรุณาตรวจสอบอีกครั้ง");
-      } else {
-        setLookupResults(data);
-      }
+      const { data } = await supabase.from("bookings").select("*, vans(name, model, image_url)").eq("customer_phone", q.replace(/[-\s]/g, "")).order("created_at", { ascending: false });
+      if (!data || data.length === 0) { setLookupError(t("lookup.notFoundPhone")); }
+      else { setLookupResults(data); }
     } else {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("*, vans(name, model, image_url)")
-        .eq("booking_code", q.toUpperCase())
-        .maybeSingle();
-      if (error || !data) {
-        setLookupError("ไม่พบการจองด้วยรหัสนี้ กรุณาตรวจสอบอีกครั้ง");
-      } else {
-        setLookupResult(data);
-      }
+      const { data, error } = await supabase.from("bookings").select("*, vans(name, model, image_url)").eq("booking_code", q.toUpperCase()).maybeSingle();
+      if (error || !data) { setLookupError(t("lookup.notFoundCode")); }
+      else { setLookupResult(data); }
     }
     setLookupLoading(false);
   };
@@ -188,42 +163,26 @@ export default function Index() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVan || !startDate || !endDate) return;
-
     if (!phoneRegex.test(form.phone.replace(/[-\s]/g, ""))) {
-      toast({ title: "Invalid Phone", description: "Please enter a valid Thai phone number.", variant: "destructive" });
+      toast({ title: t("val.invalidPhone"), description: t("val.invalidPhoneDesc"), variant: "destructive" });
       return;
     }
-
     if (days < 1) {
-      toast({ title: "Invalid Dates", description: "End date must be after start date.", variant: "destructive" });
+      toast({ title: t("val.invalidDates"), description: t("val.invalidDatesDesc"), variant: "destructive" });
       return;
     }
-
     setSubmitting(true);
     const { data, error } = await supabase.from("bookings").insert({
-      customer_name: form.name,
-      customer_phone: form.phone.replace(/[-\s]/g, ""),
-      van_id: selectedVan.id,
-      start_date: format(startDate, "yyyy-MM-dd"),
-      end_date: format(endDate, "yyyy-MM-dd"),
-      pickup_location: form.pickup,
-       pickup_time: form.pickupTime || null,
-       total_price: totalPrice,
-       notes: form.notes || null,
-      status: "pending",
+      customer_name: form.name, customer_phone: form.phone.replace(/[-\s]/g, ""),
+      van_id: selectedVan.id, start_date: format(startDate, "yyyy-MM-dd"), end_date: format(endDate, "yyyy-MM-dd"),
+      pickup_location: form.pickup, pickup_time: form.pickupTime || null, total_price: totalPrice, notes: form.notes || null, status: "pending",
     }).select().single();
 
     if (error) {
-      toast({ title: "Booking Failed", description: error.message, variant: "destructive" });
+      toast({ title: t("val.bookingFailed"), description: error.message, variant: "destructive" });
     } else {
       setBookingCode((data as { booking_code: string }).booking_code);
-      setBookingSummary({
-        vanName: selectedVan.name,
-        startDate: format(startDate, "d MMM"),
-        endDate: format(endDate, "d MMM yyyy"),
-        days,
-        totalPrice,
-      });
+      setBookingSummary({ vanName: selectedVan.name, startDate: format(startDate, "d MMM"), endDate: format(endDate, "d MMM yyyy"), days, totalPrice });
       setBookingOpen(false);
       setSuccessOpen(true);
       setForm({ name: "", phone: "", pickup: "", pickupTime: "", notes: "" });
@@ -245,19 +204,19 @@ export default function Index() {
             <p className="text-sm font-bold tracking-wide text-foreground">GOLDMINE_TRAVEL</p>
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#fleet" className="hover:text-foreground transition-colors">Our Fleet</a>
-            <a href="#why-us" className="hover:text-foreground transition-colors">Why Us</a>
+            <a href="#fleet" className="hover:text-foreground transition-colors">{t("nav.fleet")}</a>
+            <a href="#why-us" className="hover:text-foreground transition-colors">{t("nav.why")}</a>
             <button onClick={() => setLookupOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
-              <Search className="w-3.5 h-3.5" /> ตรวจสอบการจอง
+              <Search className="w-3.5 h-3.5" /> {t("nav.lookup")}
             </button>
-            <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">Contact</a>
+            <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">{t("nav.contact")}</a>
           </nav>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" className="hidden sm:flex border-foreground/20 text-foreground hover:bg-foreground/10" onClick={() => setLookupOpen(true)}>
-              <Search className="w-3.5 h-3.5 mr-1.5" /> ตรวจสอบการจอง
+              <Search className="w-3.5 h-3.5 mr-1.5" /> {t("nav.lookup")}
             </Button>
             <Button size="sm" asChild className="hidden sm:flex" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
-              <a href="#fleet">Book Now</a>
+              <a href="#fleet">{t("nav.bookNow")}</a>
             </Button>
           </div>
         </div>
@@ -265,46 +224,31 @@ export default function Index() {
 
       {/* Hero */}
       <section className="relative h-screen flex items-center overflow-hidden">
-        <img
-          src={heroVan}
-          alt="Luxury van"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={heroVan} alt="Luxury van" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, hsl(200 35% 8% / 0.92) 0%, hsl(200 35% 8% / 0.70) 60%, hsl(200 35% 8% / 0.20) 100%)" }} />
-
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-16">
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="max-w-xl"
-          >
+          <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-xl">
             <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gold mb-4">
-              <div className="h-px w-8 bg-gold" /> Premium Van Rental with Driver
+              <div className="h-px w-8 bg-gold" /> {t("hero.tag")}
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-5">
-              Travel in<br />
-              <span className="text-gold">Executive</span><br />
-              Comfort
+              {t("hero.title1")}<br />
+              <span className="text-gold">{t("hero.title2")}</span><br />
+              {t("hero.title3")}
             </h1>
             <p className="text-base sm:text-lg mb-8" style={{ color: "hsl(195 20% 75%)" }}>
-              Luxury vans with professional drivers for corporate events, airport transfers, and VIP journeys across Thailand.
+              {t("hero.desc")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button size="lg" asChild className="h-12 px-7 text-sm font-semibold" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
-                <a href="#fleet">
-                  เลือกดูรถ <ArrowRight className="w-4 h-4 ml-2" />
-                </a>
+                <a href="#fleet">{t("hero.browse")} <ArrowRight className="w-4 h-4 ml-2" /></a>
               </Button>
               <Button size="lg" variant="outline" asChild className="h-12 px-7 text-sm font-semibold border-white/25 text-white hover:bg-white/10">
-                <a href="#footer">
-                  <Phone className="w-4 h-4 mr-2" /> ติดต่อเรา
-                </a>
+                <a href="#footer"><Phone className="w-4 h-4 mr-2" /> {t("hero.contactUs")}</a>
               </Button>
             </div>
           </motion.div>
         </div>
-
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
           <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
             <ChevronDown className="w-6 h-6 text-white/50" />
@@ -316,28 +260,21 @@ export default function Index() {
       <section id="why-us" className="py-20 px-4 sm:px-6" style={{ background: "hsl(var(--primary))" }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">Our Commitment</p>
-            <h2 className="text-3xl font-bold text-white">Why Choose GOLDMINE_TRAVEL?</h2>
+            <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">{t("why.tag")}</p>
+            <h2 className="text-3xl font-bold text-white">{t("why.title")}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
-              { icon: Shield, title: "Licensed & Insured", desc: "All drivers are professionally licensed with comprehensive insurance coverage." },
-              { icon: Clock, title: "24/7 Availability", desc: "Round-the-clock service for early flights, late events, and emergency transfers." },
-              { icon: Star, title: "VIP Experience", desc: "Premium vehicles with in-cabin amenities designed for executive comfort." },
+              { icon: Shield, titleKey: "why.licensed.title" as const, descKey: "why.licensed.desc" as const },
+              { icon: Clock, titleKey: "why.247.title" as const, descKey: "why.247.desc" as const },
+              { icon: Star, titleKey: "why.vip.title" as const, descKey: "why.vip.desc" as const },
             ].map((item, i) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="text-center"
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
                 <div className="w-14 h-14 rounded-xl mx-auto mb-4 flex items-center justify-center" style={{ background: "hsl(var(--gold) / 0.15)", border: "1px solid hsl(var(--gold) / 0.3)" }}>
                   <item.icon className="w-6 h-6 text-gold" />
                 </div>
-                <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "hsl(195 20% 60%)" }}>{item.desc}</p>
+                <h3 className="text-base font-semibold text-white mb-2">{t(item.titleKey)}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "hsl(195 20% 60%)" }}>{t(item.descKey)}</p>
               </motion.div>
             ))}
           </div>
@@ -348,31 +285,21 @@ export default function Index() {
       <section id="fleet" className="py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">Our Vehicles</p>
-            <h2 className="text-3xl font-bold text-foreground">Select Your Van</h2>
-            <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm">Each vehicle is meticulously maintained and equipped to deliver a first-class travel experience.</p>
+            <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">{t("fleet.tag")}</p>
+            <h2 className="text-3xl font-bold text-foreground">{t("fleet.title")}</h2>
+            <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm">{t("fleet.desc")}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {loading ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} />
+              <SkeletonCard key={i} />
             )) : vans.map((van, i) => (
-              <motion.div
-                key={van.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.07 }}
-                className="group cursor-pointer"
-                onClick={() => openDetail(van)}
-              >
+              <motion.div key={van.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }} className="group cursor-pointer" onClick={() => openDetail(van)}>
                 <div className={cn("bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-400 border border-border hover:border-gold/30", van.busy && "opacity-75")}>
                   <div className="relative">
-                    <VanImageCarousel van={van} height="h-52" />
+                    <VanImageCarousel van={van} height="h-52" noImageText={t("fleet.noImage")} />
                     {van.busy && (
-                      <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                        ไม่ว่าง
-                      </div>
+                      <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">{t("fleet.busy")}</div>
                     )}
                   </div>
                   <div className="p-5">
@@ -383,23 +310,19 @@ export default function Index() {
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-gold text-xl">฿{Number(van.price_per_day).toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">per day</p>
+                        <p className="text-xs text-muted-foreground">{t("fleet.perDay")}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 flex-wrap">
                       <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
-                        <Users className="w-3 h-3" /> {van.seats} seats
+                        <Users className="w-3 h-3" /> {van.seats} {t("fleet.seats")}
                       </span>
                       {van.features.wifi && (
-                        <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
-                          <Wifi className="w-3 h-3" /> WiFi
-                        </span>
+                        <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full"><Wifi className="w-3 h-3" /> WiFi</span>
                       )}
                       {van.features.ac && (
-                        <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
-                          <Wind className="w-3 h-3" /> AC
-                        </span>
+                        <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full"><Wind className="w-3 h-3" /> AC</span>
                       )}
                       {van.co2_per_km != null && (
                         <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
@@ -408,7 +331,6 @@ export default function Index() {
                       )}
                     </div>
 
-                    {/* Driver badge on card */}
                     {van.driver && (
                       <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
                         {van.driver.photo_url ? (
@@ -416,7 +338,7 @@ export default function Index() {
                         ) : (
                           <User className="w-3.5 h-3.5" />
                         )}
-                        <span>คนขับ: {van.driver.name}</span>
+                        <span>{t("fleet.driver")}: {van.driver.name}</span>
                       </div>
                     )}
 
@@ -426,7 +348,7 @@ export default function Index() {
                       disabled={van.busy}
                       onClick={(e) => { e.stopPropagation(); openBooking(van); }}
                     >
-                      {van.busy ? "ไม่ว่าง" : "Book This Van"}
+                      {van.busy ? t("fleet.busy") : t("fleet.book")}
                     </Button>
                   </div>
                 </div>
@@ -445,7 +367,7 @@ export default function Index() {
             </div>
             <p className="text-sm font-bold text-white">GOLDMINE_TRAVEL</p>
           </div>
-          <p className="text-xs" style={{ color: "hsl(200 14% 45%)" }}>© 2024 GOLDMINE_TRAVEL. All rights reserved.</p>
+          <p className="text-xs" style={{ color: "hsl(200 14% 45%)" }}>© 2024 GOLDMINE_TRAVEL. {t("footer.rights")}.</p>
           <div className="flex gap-4 text-xs" style={{ color: "hsl(200 14% 50%)" }}>
             <a href={CONTACT_LINE} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">LINE</a>
             <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">WhatsApp</a>
@@ -454,13 +376,24 @@ export default function Index() {
         </div>
       </footer>
 
+      {/* Language Toggle - bottom right */}
+      <button
+        onClick={toggleLang}
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+        style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
+        aria-label="Toggle language"
+      >
+        <Globe className="w-4 h-4" />
+        {lang === "th" ? "EN" : "TH"}
+      </button>
+
       {/* Van Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           {selectedVan && (
             <>
               <div className="relative">
-                <VanImageCarousel van={selectedVan} height="h-64" rounded="rounded-t-lg" />
+                <VanImageCarousel van={selectedVan} height="h-64" rounded="rounded-t-lg" noImageText={t("fleet.noImage")} />
                 <div className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none">
                   <h2 className="text-2xl font-bold text-white">{selectedVan.name}</h2>
                   <p className="text-white/75 text-sm">{selectedVan.model}</p>
@@ -470,7 +403,7 @@ export default function Index() {
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2 flex-wrap">
                     <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs">
-                      <Users className="w-3 h-3" /> {selectedVan.seats} Passengers
+                      <Users className="w-3 h-3" /> {selectedVan.seats} {t("fleet.passengers")}
                     </span>
                     {selectedVan.features.wifi && <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs"><Wifi className="w-3 h-3" /> WiFi</span>}
                     {selectedVan.features.ac && <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs"><Wind className="w-3 h-3" /> AC</span>}
@@ -482,13 +415,12 @@ export default function Index() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-gold">฿{Number(selectedVan.price_per_day).toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">per day</p>
+                    <p className="text-xs text-muted-foreground">{t("fleet.perDay")}</p>
                   </div>
                 </div>
                 {selectedVan.description && (
                   <p className="text-sm text-muted-foreground leading-relaxed">{selectedVan.description}</p>
                 )}
-                {/* Driver Info */}
                 {selectedVan.driver && (
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
                     {selectedVan.driver.photo_url ? (
@@ -500,10 +432,10 @@ export default function Index() {
                     )}
                     <div>
                       <p className="text-sm font-semibold flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-gold" /> คนขับ: {selectedVan.driver.name}
+                        <User className="w-3.5 h-3.5 text-gold" /> {t("fleet.driver")}: {selectedVan.driver.name}
                       </p>
                       {selectedVan.driver.experience_years > 0 && (
-                        <p className="text-xs text-muted-foreground">ประสบการณ์ {selectedVan.driver.experience_years} ปี</p>
+                        <p className="text-xs text-muted-foreground">{t("fleet.experience")} {selectedVan.driver.experience_years} {t("fleet.years")}</p>
                       )}
                       {selectedVan.driver.description && (
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedVan.driver.description}</p>
@@ -517,7 +449,7 @@ export default function Index() {
                   disabled={selectedVan.busy}
                   onClick={() => openBooking(selectedVan)}
                 >
-                  {selectedVan.busy ? "ไม่ว่าง" : "Book Now"} {!selectedVan.busy && <ArrowRight className="w-4 h-4 ml-2" />}
+                  {selectedVan.busy ? t("fleet.busy") : t("nav.bookNow")} {!selectedVan.busy && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               </div>
             </>
@@ -531,153 +463,92 @@ export default function Index() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Crown className="w-5 h-5 text-gold" />
-              Reserve {selectedVan?.name}
+              {t("booking.title")} {selectedVan?.name}
             </DialogTitle>
           </DialogHeader>
 
           {selectedVan && (
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
-              {/* Date pickers */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Start Date</Label>
+                  <Label>{t("booking.startDate")}</Label>
                   <Popover open={startOpen} onOpenChange={setStartOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}
-                      >
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}>
                         <CalendarIcon className="w-4 h-4 mr-2" />
-                        {startDate ? format(startDate, "d MMM yyyy") : "Pick date"}
+                        {startDate ? format(startDate, "d MMM yyyy") : t("booking.pickDate")}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={(d) => { setStartDate(d); setStartOpen(false); }}
-                        disabled={(d) => !isAfter(d, new Date())}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
+                      <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartOpen(false); }} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>End Date</Label>
+                  <Label>{t("booking.endDate")}</Label>
                   <Popover open={endOpen} onOpenChange={setEndOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn("w-full justify-start text-left font-normal h-10", !endDate && "text-muted-foreground")}
-                      >
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !endDate && "text-muted-foreground")}>
                         <CalendarIcon className="w-4 h-4 mr-2" />
-                        {endDate ? format(endDate, "d MMM yyyy") : "Pick date"}
+                        {endDate ? format(endDate, "d MMM yyyy") : t("booking.pickDate")}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={(d) => { setEndDate(d); setEndOpen(false); }}
-                        disabled={(d) => !startDate || !isAfter(d, startDate)}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
+                      <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setEndOpen(false); }} disabled={(d) => !startDate || !isAfter(d, startDate)} initialFocus className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                 </div>
               </div>
 
-              {/* Price preview */}
               {days > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl p-4 text-sm flex items-center justify-between"
-                  style={{ background: "hsl(var(--gold) / 0.08)", border: "1px solid hsl(var(--gold) / 0.25)" }}
-                >
-                  <span className="text-muted-foreground">฿{Number(selectedVan.price_per_day).toLocaleString()} × {days} day{days > 1 ? "s" : ""}</span>
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl p-4 text-sm flex items-center justify-between" style={{ background: "hsl(var(--gold) / 0.08)", border: "1px solid hsl(var(--gold) / 0.25)" }}>
+                  <span className="text-muted-foreground">฿{Number(selectedVan.price_per_day).toLocaleString()} × {days} {days > 1 ? t("booking.days") : t("booking.day")}</span>
                   <span className="text-lg font-bold text-gold">฿{totalPrice.toLocaleString()}</span>
                 </motion.div>
               )}
 
               <div className="space-y-1.5">
-                <Label>Full Name</Label>
+                <Label>{t("booking.name")}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Somchai Jaidee"
-                    className="pl-9"
-                    value={form.name}
-                    onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                    required
-                  />
+                  <Input placeholder={t("booking.namePlaceholder")} className="pl-9" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label>Phone Number</Label>
+                <Label>{t("booking.phone")}</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="0891234567"
-                    className="pl-9"
-                    value={form.phone}
-                    onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
-                    required
-                  />
+                  <Input placeholder={t("booking.phonePlaceholder")} className="pl-9" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} required />
                 </div>
-                <p className="text-xs text-muted-foreground">Thai format: 0XX-XXX-XXXX</p>
+                <p className="text-xs text-muted-foreground">{t("booking.phoneHint")}</p>
               </div>
 
               <div className="space-y-1.5">
-                 <Label>Pickup Location</Label>
-                 <div className="relative">
-                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                   <Input
-                     placeholder="Suvarnabhumi Airport, Terminal 2"
-                     className="pl-9"
-                     value={form.pickup}
-                     onChange={(e) => setForm(f => ({ ...f, pickup: e.target.value }))}
-                     required
-                   />
-                 </div>
-               </div>
-
-               <div className="space-y-1.5">
-                 <Label>Pickup Time</Label>
-                 <div className="relative">
-                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                   <Input
-                     type="time"
-                     placeholder="08:00"
-                     className="pl-9"
-                     value={form.pickupTime}
-                     onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))}
-                   />
-                 </div>
-               </div>
-
-              <div className="space-y-1.5">
-                <Label>Additional Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
-                <Textarea
-                  placeholder="Special requests, drop-off location, number of passengers..."
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
-                />
+                <Label>{t("booking.pickup")}</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input placeholder={t("booking.pickupPlaceholder")} className="pl-9" value={form.pickup} onChange={(e) => setForm(f => ({ ...f, pickup: e.target.value }))} required />
+                </div>
               </div>
 
-              <Button
-                type="submit"
-                disabled={submitting || !startDate || !endDate || days < 1}
-                className="w-full h-12 text-sm font-semibold"
-                style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
-              >
-                {submitting ? "Sending..." : "Confirm Booking Request"}
+              <div className="space-y-1.5">
+                <Label>{t("booking.pickupTime")}</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input type="time" placeholder="08:00" className="pl-9" value={form.pickupTime} onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>{t("booking.notes")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
+                <Textarea placeholder={t("booking.notesPlaceholder")} rows={2} value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} />
+              </div>
+
+              <Button type="submit" disabled={submitting || !startDate || !endDate || days < 1} className="w-full h-12 text-sm font-semibold" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
+                {submitting ? t("booking.submitting") : t("booking.submit")}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">Our team will contact you within 2 hours to confirm your booking.</p>
+              <p className="text-xs text-center text-muted-foreground">{t("booking.confirmNote")}</p>
             </form>
           )}
         </DialogContent>
@@ -691,38 +562,38 @@ export default function Index() {
               <CheckCircle className="w-8 h-8 text-gold" />
             </div>
             <div>
-              <h2 className="text-xl font-bold mb-1">จองสำเร็จ!</h2>
-              <p className="text-muted-foreground text-sm mb-2">รหัสการจองของคุณ:</p>
+              <h2 className="text-xl font-bold mb-1">{t("success.title")}</h2>
+              <p className="text-muted-foreground text-sm mb-2">{t("success.code")}</p>
               <div
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ background: "hsl(var(--gold) / 0.12)", border: "1px solid hsl(var(--gold) / 0.3)" }}
                 onClick={() => {
                   navigator.clipboard.writeText(bookingCode);
-                  toast({ title: "คัดลอกแล้ว!", description: `รหัส ${bookingCode} ถูกคัดลอกแล้ว` });
+                  toast({ title: t("success.copied"), description: `${bookingCode}` });
                 }}
               >
                 <span className="font-mono font-bold text-2xl tracking-widest text-gold">{bookingCode}</span>
                 <Copy className="w-4 h-4 text-gold" />
               </div>
-              <p className="text-xs text-muted-foreground mt-2">กดเพื่อคัดลอกรหัส • ใช้ค้นหาสถานะการจอง</p>
+              <p className="text-xs text-muted-foreground mt-2">{t("success.copyHint")}</p>
             </div>
             <div className="rounded-xl p-4 text-sm text-left space-y-1" style={{ background: "hsl(var(--muted))" }}>
               <p className="font-semibold text-foreground">{bookingSummary?.vanName}</p>
               {bookingSummary && (
-                <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} วัน)</p>
+                <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} {t("booking.days")})</p>
               )}
-              <p className="text-gold font-bold">รวม: ฿{(bookingSummary?.totalPrice ?? 0).toLocaleString()}</p>
+              <p className="text-gold font-bold">{t("success.total")}: ฿{(bookingSummary?.totalPrice ?? 0).toLocaleString()}</p>
             </div>
-            <p className="text-xs text-muted-foreground">ทีมงานจะติดต่อกลับภายใน 2 ชั่วโมงเพื่อยืนยันการจอง</p>
+            <p className="text-xs text-muted-foreground">{t("success.confirmNote")}</p>
             <div className="flex flex-col gap-2">
               <Button asChild style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                 <a href={CONTACT_LINE} target="_blank" rel="noreferrer">
-                  <MessageCircle className="w-4 h-4 mr-2" /> แชทผ่าน LINE
+                  <MessageCircle className="w-4 h-4 mr-2" /> {t("success.chatLine")}
                 </a>
               </Button>
               <Button variant="outline" asChild>
                 <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer">
-                  <Phone className="w-4 h-4 mr-2" /> ติดต่อผ่าน WhatsApp
+                  <Phone className="w-4 h-4 mr-2" /> {t("success.chatWhatsapp")}
                 </a>
               </Button>
             </div>
@@ -736,44 +607,33 @@ export default function Index() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Search className="w-5 h-5 text-gold" />
-              ค้นหาการจอง
+              {t("lookup.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="flex gap-2">
               <Input
-                placeholder="กรอกรหัสการจอง หรือ เบอร์โทรศัพท์"
+                placeholder={t("lookup.placeholder")}
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && handleLookup()}
                 className="font-mono tracking-wider uppercase"
               />
-              <Button
-                onClick={handleLookup}
-                disabled={lookupLoading || !lookupCode.trim()}
-                style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
-              >
+              <Button onClick={handleLookup} disabled={lookupLoading || !lookupCode.trim()} style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                 {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">ค้นหาด้วยรหัสการจอง (เช่น A1B2C3) หรือเบอร์โทรศัพท์ (เช่น 0891234567)</p>
+            <p className="text-xs text-muted-foreground">{t("lookup.hint")}</p>
 
             {lookupError && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">
-                {lookupError}
-              </motion.p>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">{lookupError}</motion.p>
             )}
 
-            {/* Multiple results from phone search */}
             {lookupResults.length > 0 && !lookupResult && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-                <p className="text-sm font-medium text-foreground">พบ {lookupResults.length} รายการจอง</p>
+                <p className="text-sm font-medium text-foreground">{t("lookup.found")} {lookupResults.length} {t("lookup.bookings")}</p>
                 {lookupResults.map((b: any) => (
-                  <div
-                    key={b.id}
-                    onClick={() => setLookupResult(b)}
-                    className="p-3 rounded-lg border border-border hover:border-gold/40 cursor-pointer transition-colors"
-                  >
+                  <div key={b.id} onClick={() => setLookupResult(b)} className="p-3 rounded-lg border border-border hover:border-gold/40 cursor-pointer transition-colors">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="font-mono text-xs font-bold tracking-wider text-gold">{b.booking_code ?? "—"}</span>
@@ -787,10 +647,7 @@ export default function Index() {
                         b.status === "completed" && "bg-blue-100 text-blue-700",
                         b.status === "cancelled" && "bg-red-100 text-red-700",
                       )}>
-                        {b.status === "confirmed" ? "ยืนยันแล้ว" :
-                         b.status === "pending" ? "รอดำเนินการ" :
-                         b.status === "proceed" ? "กำลังดำเนินการ" :
-                         b.status === "completed" ? "เสร็จสิ้น" : "ยกเลิก"}
+                        {getStatusText(b.status, t)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{b.start_date} → {b.end_date} • ฿{Number(b.total_price).toLocaleString()}</p>
@@ -799,12 +656,11 @@ export default function Index() {
               </motion.div>
             )}
 
-            {/* Single result detail */}
             {lookupResult && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                 {lookupResults.length > 0 && (
                   <button onClick={() => setLookupResult(null)} className="text-xs text-gold hover:underline flex items-center gap-1">
-                    <ChevronLeft className="w-3 h-3" /> กลับไปรายการ
+                    <ChevronLeft className="w-3 h-3" /> {t("lookup.back")}
                   </button>
                 )}
                 <div className="rounded-xl overflow-hidden border border-border">
@@ -817,53 +673,50 @@ export default function Index() {
                         <h3 className="font-bold text-foreground">{lookupResult.vans?.name || "Van"}</h3>
                         <p className="text-xs text-muted-foreground">{lookupResult.vans?.model}</p>
                       </div>
-                       <span className={cn(
-                         "px-2.5 py-1 rounded-full text-xs font-semibold",
-                         lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
-                         lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
-                         lookupResult.status === "proceed" && "bg-purple-100 text-purple-700",
-                         lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
-                         lookupResult.status === "cancelled" && "bg-red-100 text-red-700",
-                       )}>
-                         {lookupResult.status === "confirmed" ? "ยืนยันแล้ว" :
-                          lookupResult.status === "pending" ? "รอดำเนินการ" :
-                          lookupResult.status === "proceed" ? "กำลังดำเนินการ" :
-                          lookupResult.status === "completed" ? "เสร็จสิ้น" : "ยกเลิก"}
+                      <span className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-semibold",
+                        lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
+                        lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
+                        lookupResult.status === "proceed" && "bg-purple-100 text-purple-700",
+                        lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
+                        lookupResult.status === "cancelled" && "bg-red-100 text-red-700",
+                      )}>
+                        {getStatusText(lookupResult.status, t)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <p className="text-xs text-muted-foreground">รหัสการจอง</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.bookingCode")}</p>
                         <p className="font-mono font-bold text-gold tracking-wider">{lookupResult.booking_code ?? "—"}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">ชื่อผู้จอง</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.bookerName")}</p>
                         <p className="font-medium text-foreground">{lookupResult.customer_name}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">เบอร์โทร</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.phoneLabel")}</p>
                         <p className="font-medium text-foreground">{lookupResult.customer_phone}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">วันรับรถ</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.startDate")}</p>
                         <p className="font-medium text-foreground">{lookupResult.start_date}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">วันคืนรถ</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.endDate")}</p>
                         <p className="font-medium text-foreground">{lookupResult.end_date}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">จุดรับรถ</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.pickupLocation")}</p>
                         <p className="font-medium text-foreground">{lookupResult.pickup_location}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">ราคารวม</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.totalPrice")}</p>
                         <p className="font-bold text-gold">฿{Number(lookupResult.total_price).toLocaleString()}</p>
                       </div>
                     </div>
                     {lookupResult.notes && (
                       <div>
-                        <p className="text-xs text-muted-foreground">หมายเหตุ</p>
+                        <p className="text-xs text-muted-foreground">{t("lookup.notes")}</p>
                         <p className="text-sm text-foreground">{lookupResult.notes}</p>
                       </div>
                     )}
@@ -878,20 +731,13 @@ export default function Index() {
   );
 }
 
-// Image carousel for van cards and detail
-function VanImageCarousel({ van, height = "h-52", rounded = "" }: { van: Van; height?: string; rounded?: string }) {
+// Image carousel
+function VanImageCarousel({ van, height = "h-52", rounded = "", noImageText = "No Image" }: { van: Van; height?: string; rounded?: string; noImageText?: string }) {
   const [current, setCurrent] = useState(0);
-  const allImages = [
-    ...(van.image_url ? [van.image_url] : []),
-    ...van.images.map(img => img.image_url),
-  ];
+  const allImages = [...(van.image_url ? [van.image_url] : []), ...van.images.map(img => img.image_url)];
 
   if (allImages.length === 0) {
-    return (
-      <div className={`relative ${height} ${rounded} overflow-hidden bg-muted flex items-center justify-center text-muted-foreground`}>
-        No Image
-      </div>
-    );
+    return <div className={`relative ${height} ${rounded} overflow-hidden bg-muted flex items-center justify-center text-muted-foreground`}>{noImageText}</div>;
   }
 
   return (
@@ -899,36 +745,21 @@ function VanImageCarousel({ van, height = "h-52", rounded = "" }: { van: Van; he
       <img src={allImages[current]} alt={van.name} className="w-full h-full object-cover transition-transform duration-500" />
       {van.features.vip_seats && (
         <div className="absolute top-3 left-3 z-10">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gold text-primary">
-            <Star className="w-3 h-3" /> VIP
-          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gold text-primary"><Star className="w-3 h-3" /> VIP</span>
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
       {allImages.length > 1 && (
         <>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setCurrent(c => (c - 1 + allImages.length) % allImages.length); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
-          >
+          <button type="button" onClick={(e) => { e.stopPropagation(); setCurrent(c => (c - 1 + allImages.length) % allImages.length); }} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setCurrent(c => (c + 1) % allImages.length); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10"
-          >
+          <button type="button" onClick={(e) => { e.stopPropagation(); setCurrent(c => (c + 1) % allImages.length); }} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10">
             <ChevronRightIcon className="w-4 h-4" />
           </button>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
             {allImages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-white w-3" : "bg-white/50"}`}
-              />
+              <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setCurrent(i); }} className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-white w-3" : "bg-white/50"}`} />
             ))}
           </div>
         </>
@@ -937,10 +768,9 @@ function VanImageCarousel({ van, height = "h-52", rounded = "" }: { van: Van; he
   );
 }
 
-// Skeleton card for loading state
-function Card({ key }: { key?: number }) {
+function SkeletonCard() {
   return (
-    <div className="bg-card rounded-2xl overflow-hidden shadow-card border border-border" key={key}>
+    <div className="bg-card rounded-2xl overflow-hidden shadow-card border border-border">
       <Skeleton className="h-52 w-full" />
       <div className="p-5 space-y-3">
         <div className="flex justify-between">
