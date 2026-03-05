@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Filter, Phone, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type BookingStatus = "pending" | "confirmed" | "proceed" | "completed" | "cancelled";
 
@@ -135,6 +136,7 @@ export default function AdminBookings() {
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="text-left p-4 font-medium text-muted-foreground">Code</th>
+                    <th className="text-left p-4 font-medium text-muted-foreground">Type</th>
                     <th className="text-left p-4 font-medium text-muted-foreground">Customer</th>
                     <th className="text-left p-4 font-medium text-muted-foreground">Van</th>
                     <th className="text-left p-4 font-medium text-muted-foreground">Dates</th>
@@ -147,7 +149,7 @@ export default function AdminBookings() {
                 <tbody>
                   {loading ? Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i} className="border-b">
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <td key={j} className="p-4"><Skeleton className="h-4 w-full" /></td>
                       ))}
                     </tr>
@@ -160,6 +162,11 @@ export default function AdminBookings() {
                     >
                       <td className="p-4">
                         <span className="font-mono text-xs font-bold tracking-wider bg-muted px-2 py-1 rounded">{booking.booking_code ?? "—"}</span>
+                      </td>
+                      <td className="p-4">
+                        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", (booking as any).booking_type === "taxi" ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground")}>
+                          {(booking as any).booking_type === "taxi" ? "แท็กซี่" : "เช่าเหมาวัน"}
+                        </span>
                       </td>
                       <td className="p-4">
                         <p className="font-medium">{booking.customer_name}</p>

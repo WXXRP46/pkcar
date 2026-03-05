@@ -15,7 +15,8 @@ import { format, differenceInDays, addDays, isAfter } from "date-fns";
 import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
   CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf,
-  Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon, Globe
+  Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon, Globe,
+  Car, Navigation
 } from "lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,31 @@ interface Van {
   driver?: { name: string; photo_url: string | null; experience_years: number; description: string | null } | null;
 }
 
+interface Attraction {
+  id: string;
+  title: string;
+  title_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  location: string | null;
+}
+
+interface EventItem {
+  id: string;
+  title: string;
+  title_en: string | null;
+  description: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  location: string | null;
+  event_date: string | null;
+  event_end_date: string | null;
+  event_time: string | null;
+}
+
+type BookingType = "daily_rental" | "taxi";
+
 const CONTACT_LINE = "https://line.me/ti/p/your-line-id";
 const CONTACT_WHATSAPP = "https://wa.me/66800000000";
 
@@ -67,14 +93,15 @@ export default function Index() {
   const [successOpen, setSuccessOpen] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
 
+  const [bookingType, setBookingType] = useState<BookingType>("daily_rental");
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
 
-  const [form, setForm] = useState({ name: "", phone: "", pickup: "", pickupTime: "", notes: "" });
+  const [form, setForm] = useState({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number } | null>(null);
+  const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number; bookingType: BookingType } | null>(null);
 
   const [lookupCode, setLookupCode] = useState("");
   const [lookupOpen, setLookupOpen] = useState(false);
@@ -82,6 +109,10 @@ export default function Index() {
   const [lookupResult, setLookupResult] = useState<any | null>(null);
   const [lookupResults, setLookupResults] = useState<any[]>([]);
   const [lookupError, setLookupError] = useState("");
+
+  const [attractions, setAttractions] = useState<Attraction[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [exploreTab, setExploreTab] = useState<"attractions" | "events">("attractions");
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -136,8 +167,21 @@ export default function Index() {
     load();
   }, []);
 
+  // Load attractions & events
+  useEffect(() => {
+    const loadExplore = async () => {
+      const [attrRes, evtRes] = await Promise.all([
+        (supabase as any).from("attractions").select("*").eq("is_active", true).order("sort_order"),
+        (supabase as any).from("events").select("*").eq("is_active", true).order("event_date"),
+      ]);
+      setAttractions((attrRes.data as Attraction[]) ?? []);
+      setEvents((evtRes.data as EventItem[]) ?? []);
+    };
+    loadExplore();
+  }, []);
+
   const openDetail = (van: Van) => { setSelectedVan(van); setDetailOpen(true); };
-  const openBooking = (van: Van) => { setSelectedVan(van); setDetailOpen(false); setBookingOpen(true); };
+  const openBooking = (van: Van) => { setSelectedVan(van); setDetailOpen(false); setBookingOpen(true); setBookingType("daily_rental"); };
 
   const handleLookup = async () => {
     const q = lookupCode.trim();
@@ -162,30 +206,64 @@ export default function Index() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedVan || !startDate || !endDate) return;
+    if (!selectedVan) return;
     if (!phoneRegex.test(form.phone.replace(/[-\s]/g, ""))) {
       toast({ title: t("val.invalidPhone"), description: t("val.invalidPhoneDesc"), variant: "destructive" });
       return;
     }
-    if (days < 1) {
-      toast({ title: t("val.invalidDates"), description: t("val.invalidDatesDesc"), variant: "destructive" });
-      return;
+
+    if (bookingType === "daily_rental") {
+      if (!startDate || !endDate || days < 1) {
+        toast({ title: t("val.invalidDates"), description: t("val.invalidDatesDesc"), variant: "destructive" });
+        return;
+      }
+    } else {
+      if (!startDate) {
+        toast({ title: t("val.invalidDates"), description: t("val.invalidDatesDesc"), variant: "destructive" });
+        return;
+      }
     }
+
     setSubmitting(true);
-    const { data, error } = await supabase.from("bookings").insert({
-      customer_name: form.name, customer_phone: form.phone.replace(/[-\s]/g, ""),
-      van_id: selectedVan.id, start_date: format(startDate, "yyyy-MM-dd"), end_date: format(endDate, "yyyy-MM-dd"),
-      pickup_location: form.pickup, pickup_time: form.pickupTime || null, total_price: totalPrice, notes: form.notes || null, status: "pending",
-    }).select().single();
+    const bookingData: any = {
+      customer_name: form.name,
+      customer_phone: form.phone.replace(/[-\s]/g, ""),
+      van_id: selectedVan.id,
+      pickup_location: form.pickup,
+      pickup_time: form.pickupTime || null,
+      notes: form.notes || null,
+      status: "pending",
+      booking_type: bookingType,
+      dropoff_location: form.dropoff || null,
+    };
+
+    if (bookingType === "daily_rental") {
+      bookingData.start_date = format(startDate!, "yyyy-MM-dd");
+      bookingData.end_date = format(endDate!, "yyyy-MM-dd");
+      bookingData.total_price = totalPrice;
+    } else {
+      bookingData.start_date = format(startDate!, "yyyy-MM-dd");
+      bookingData.end_date = format(startDate!, "yyyy-MM-dd");
+      bookingData.total_price = 0;
+    }
+
+    const { data, error } = await supabase.from("bookings").insert(bookingData).select().single();
 
     if (error) {
       toast({ title: t("val.bookingFailed"), description: error.message, variant: "destructive" });
     } else {
-      setBookingCode((data as { booking_code: string }).booking_code);
-      setBookingSummary({ vanName: selectedVan.name, startDate: format(startDate, "d MMM"), endDate: format(endDate, "d MMM yyyy"), days, totalPrice });
+      setBookingCode((data as any).booking_code);
+      setBookingSummary({
+        vanName: selectedVan.name,
+        startDate: format(startDate!, "d MMM"),
+        endDate: bookingType === "daily_rental" ? format(endDate!, "d MMM yyyy") : format(startDate!, "d MMM yyyy"),
+        days: bookingType === "daily_rental" ? days : 0,
+        totalPrice: bookingType === "daily_rental" ? totalPrice : 0,
+        bookingType,
+      });
       setBookingOpen(false);
       setSuccessOpen(true);
-      setForm({ name: "", phone: "", pickup: "", pickupTime: "", notes: "" });
+      setForm({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "" });
       setStartDate(undefined);
       setEndDate(undefined);
     }
@@ -205,6 +283,7 @@ export default function Index() {
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#fleet" className="hover:text-foreground transition-colors">{t("nav.fleet")}</a>
+            <a href="#explore" className="hover:text-foreground transition-colors">{t("nav.attractions")}</a>
             <a href="#why-us" className="hover:text-foreground transition-colors">{t("nav.why")}</a>
             <button onClick={() => setLookupOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
               <Search className="w-3.5 h-3.5" /> {t("nav.lookup")}
@@ -358,6 +437,94 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Explore: Attractions & Events */}
+      {(attractions.length > 0 || events.length > 0) && (
+        <section id="explore" className="py-20 px-4 sm:px-6 bg-muted/30">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">{t("explore.tag")}</p>
+              <div className="flex justify-center gap-3 mt-4">
+                <Button
+                  variant={exploreTab === "attractions" ? "default" : "outline"}
+                  onClick={() => setExploreTab("attractions")}
+                  className={cn("gap-2", exploreTab === "attractions" && "bg-primary text-primary-foreground")}
+                >
+                  <MapPin className="w-4 h-4" /> {t("explore.attractions")}
+                </Button>
+                <Button
+                  variant={exploreTab === "events" ? "default" : "outline"}
+                  onClick={() => setExploreTab("events")}
+                  className={cn("gap-2", exploreTab === "events" && "bg-primary text-primary-foreground")}
+                >
+                  <CalendarIcon className="w-4 h-4" /> {t("explore.events")}
+                </Button>
+              </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+              {exploreTab === "attractions" && (
+                <motion.div key="attractions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {attractions.length === 0 ? (
+                    <p className="col-span-full text-center text-muted-foreground py-8">{t("explore.noAttractions")}</p>
+                  ) : attractions.map((a, i) => (
+                    <motion.div key={a.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                      <div className="bg-card rounded-2xl overflow-hidden shadow-card border border-border hover:border-gold/30 transition-all">
+                        {a.image_url ? (
+                          <img src={a.image_url} alt={a.title} className="w-full h-44 object-cover" />
+                        ) : (
+                          <div className="w-full h-44 bg-muted flex items-center justify-center"><MapPin className="w-10 h-10 text-muted-foreground" /></div>
+                        )}
+                        <div className="p-4">
+                          <h3 className="font-bold text-foreground">{lang === "en" && a.title_en ? a.title_en : a.title}</h3>
+                          {a.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{a.location}</p>}
+                          {(lang === "en" ? a.description_en || a.description : a.description) && (
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{lang === "en" ? a.description_en || a.description : a.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+              {exploreTab === "events" && (
+                <motion.div key="events" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {events.length === 0 ? (
+                    <p className="col-span-full text-center text-muted-foreground py-8">{t("explore.noEvents")}</p>
+                  ) : events.map((ev, i) => (
+                    <motion.div key={ev.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                      <div className="bg-card rounded-2xl overflow-hidden shadow-card border border-border hover:border-gold/30 transition-all">
+                        {ev.image_url ? (
+                          <img src={ev.image_url} alt={ev.title} className="w-full h-44 object-cover" />
+                        ) : (
+                          <div className="w-full h-44 bg-muted flex items-center justify-center"><CalendarIcon className="w-10 h-10 text-muted-foreground" /></div>
+                        )}
+                        <div className="p-4">
+                          <h3 className="font-bold text-foreground">{lang === "en" && ev.title_en ? ev.title_en : ev.title}</h3>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {ev.event_date && (
+                              <span className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <CalendarIcon className="w-3 h-3" /> {ev.event_date}{ev.event_end_date ? ` - ${ev.event_end_date}` : ""}
+                              </span>
+                            )}
+                            {ev.event_time && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {ev.event_time}</span>
+                            )}
+                          </div>
+                          {ev.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{ev.location}</p>}
+                          {(lang === "en" ? ev.description_en || ev.description : ev.description) && (
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{lang === "en" ? ev.description_en || ev.description : ev.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
+      )}
+
       {/* Footer */}
       <footer id="footer" style={{ background: "hsl(var(--primary))" }} className="py-10 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -376,7 +543,7 @@ export default function Index() {
         </div>
       </footer>
 
-      {/* Language Toggle - bottom right */}
+      {/* Language Toggle */}
       <button
         onClick={toggleLang}
         className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95"
@@ -469,42 +636,104 @@ export default function Index() {
 
           {selectedVan && (
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>{t("booking.startDate")}</Label>
-                  <Popover open={startOpen} onOpenChange={setStartOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}>
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        {startDate ? format(startDate, "d MMM yyyy") : t("booking.pickDate")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartOpen(false); }} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("booking.endDate")}</Label>
-                  <Popover open={endOpen} onOpenChange={setEndOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !endDate && "text-muted-foreground")}>
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        {endDate ? format(endDate, "d MMM yyyy") : t("booking.pickDate")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setEndOpen(false); }} disabled={(d) => !startDate || !isAfter(d, startDate)} initialFocus className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+              {/* Booking Type Toggle */}
+              <div className="flex gap-2 p-1 bg-muted rounded-xl">
+                <button
+                  type="button"
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
+                    bookingType === "daily_rental" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setBookingType("daily_rental")}
+                >
+                  <Car className="w-4 h-4" /> {t("booking.typeDaily")}
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
+                    bookingType === "taxi" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => setBookingType("taxi")}
+                >
+                  <Navigation className="w-4 h-4" /> {t("booking.typeTaxi")}
+                </button>
               </div>
 
-              {days > 0 && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl p-4 text-sm flex items-center justify-between" style={{ background: "hsl(var(--gold) / 0.08)", border: "1px solid hsl(var(--gold) / 0.25)" }}>
-                  <span className="text-muted-foreground">฿{Number(selectedVan.price_per_day).toLocaleString()} × {days} {days > 1 ? t("booking.days") : t("booking.day")}</span>
-                  <span className="text-lg font-bold text-gold">฿{totalPrice.toLocaleString()}</span>
-                </motion.div>
+              {bookingType === "daily_rental" ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>{t("booking.startDate")}</Label>
+                      <Popover open={startOpen} onOpenChange={setStartOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}>
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            {startDate ? format(startDate, "d MMM yyyy") : t("booking.pickDate")}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartOpen(false); }} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>{t("booking.endDate")}</Label>
+                      <Popover open={endOpen} onOpenChange={setEndOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !endDate && "text-muted-foreground")}>
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            {endDate ? format(endDate, "d MMM yyyy") : t("booking.pickDate")}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setEndOpen(false); }} disabled={(d) => !startDate || !isAfter(d, startDate)} initialFocus className="p-3 pointer-events-auto" />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  {days > 0 && (
+                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl p-4 text-sm flex items-center justify-between" style={{ background: "hsl(var(--gold) / 0.08)", border: "1px solid hsl(var(--gold) / 0.25)" }}>
+                      <span className="text-muted-foreground">฿{Number(selectedVan.price_per_day).toLocaleString()} × {days} {days > 1 ? t("booking.days") : t("booking.day")}</span>
+                      <span className="text-lg font-bold text-gold">฿{totalPrice.toLocaleString()}</span>
+                    </motion.div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>{t("booking.taxiDate")}</Label>
+                      <Popover open={startOpen} onOpenChange={setStartOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !startDate && "text-muted-foreground")}>
+                            <CalendarIcon className="w-4 h-4 mr-2" />
+                            {startDate ? format(startDate, "d MMM yyyy") : t("booking.pickDate")}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartOpen(false); }} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>{t("booking.taxiTime")}</Label>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input type="time" className="pl-9" value={form.pickupTime} onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))} required />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>{t("booking.passengers")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
+                    <div className="relative">
+                      <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input type="number" min={1} max={20} placeholder="1-20" className="pl-9" value={form.passengers} onChange={(e) => setForm(f => ({ ...f, passengers: e.target.value }))} />
+                    </div>
+                  </div>
+                </>
               )}
 
               <div className="space-y-1.5">
@@ -532,23 +761,47 @@ export default function Index() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>{t("booking.pickupTime")}</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input type="time" placeholder="08:00" className="pl-9" value={form.pickupTime} onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))} />
+              {bookingType === "taxi" && (
+                <div className="space-y-1.5">
+                  <Label>{t("booking.dropoff")}</Label>
+                  <div className="relative">
+                    <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder={t("booking.dropoffPlaceholder")} className="pl-9" value={form.dropoff} onChange={(e) => setForm(f => ({ ...f, dropoff: e.target.value }))} required />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {bookingType === "daily_rental" && (
+                <div className="space-y-1.5">
+                  <Label>{t("booking.pickupTime")}</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input type="time" placeholder="08:00" className="pl-9" value={form.pickupTime} onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))} />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label>{t("booking.notes")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
-                <Textarea placeholder={t("booking.notesPlaceholder")} rows={2} value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} />
+                <Textarea
+                  placeholder={bookingType === "taxi" ? t("booking.taxiNotesPlaceholder") : t("booking.notesPlaceholder")}
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
+                />
               </div>
 
-              <Button type="submit" disabled={submitting || !startDate || !endDate || days < 1} className="w-full h-12 text-sm font-semibold" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
+              <Button
+                type="submit"
+                disabled={submitting || !startDate || (bookingType === "daily_rental" && (!endDate || days < 1))}
+                className="w-full h-12 text-sm font-semibold"
+                style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
+              >
                 {submitting ? t("booking.submitting") : t("booking.submit")}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">{t("booking.confirmNote")}</p>
+              <p className="text-xs text-center text-muted-foreground">
+                {bookingType === "taxi" ? t("booking.taxiPriceNote") : t("booking.confirmNote")}
+              </p>
             </form>
           )}
         </DialogContent>
@@ -579,12 +832,19 @@ export default function Index() {
             </div>
             <div className="rounded-xl p-4 text-sm text-left space-y-1" style={{ background: "hsl(var(--muted))" }}>
               <p className="font-semibold text-foreground">{bookingSummary?.vanName}</p>
-              {bookingSummary && (
+              {bookingSummary && bookingSummary.bookingType === "daily_rental" && (
                 <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} {t("booking.days")})</p>
               )}
-              <p className="text-gold font-bold">{t("success.total")}: ฿{(bookingSummary?.totalPrice ?? 0).toLocaleString()}</p>
+              {bookingSummary && bookingSummary.bookingType === "taxi" && (
+                <p className="text-muted-foreground">{bookingSummary.startDate} • {t("booking.typeTaxi")}</p>
+              )}
+              {bookingSummary && bookingSummary.totalPrice > 0 && (
+                <p className="text-gold font-bold">{t("success.total")}: ฿{bookingSummary.totalPrice.toLocaleString()}</p>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">{t("success.confirmNote")}</p>
+            <p className="text-xs text-muted-foreground">
+              {bookingSummary?.bookingType === "taxi" ? t("success.taxiNote") : t("success.confirmNote")}
+            </p>
             <div className="flex flex-col gap-2">
               <Button asChild style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                 <a href={CONTACT_LINE} target="_blank" rel="noreferrer">
@@ -638,6 +898,7 @@ export default function Index() {
                       <div>
                         <span className="font-mono text-xs font-bold tracking-wider text-gold">{b.booking_code ?? "—"}</span>
                         <p className="text-sm font-medium mt-0.5">{b.vans?.name ?? "Van"}</p>
+                        {b.booking_type === "taxi" && <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded">{t("lookup.taxi")}</span>}
                       </div>
                       <span className={cn(
                         "px-2 py-0.5 rounded-full text-xs font-semibold",
@@ -690,6 +951,10 @@ export default function Index() {
                         <p className="font-mono font-bold text-gold tracking-wider">{lookupResult.booking_code ?? "—"}</p>
                       </div>
                       <div>
+                        <p className="text-xs text-muted-foreground">{t("lookup.bookingType")}</p>
+                        <p className="font-medium text-foreground">{lookupResult.booking_type === "taxi" ? t("lookup.taxi") : t("lookup.daily")}</p>
+                      </div>
+                      <div>
                         <p className="text-xs text-muted-foreground">{t("lookup.bookerName")}</p>
                         <p className="font-medium text-foreground">{lookupResult.customer_name}</p>
                       </div>
@@ -701,18 +966,28 @@ export default function Index() {
                         <p className="text-xs text-muted-foreground">{t("lookup.startDate")}</p>
                         <p className="font-medium text-foreground">{lookupResult.start_date}</p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">{t("lookup.endDate")}</p>
-                        <p className="font-medium text-foreground">{lookupResult.end_date}</p>
-                      </div>
+                      {lookupResult.booking_type !== "taxi" && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t("lookup.endDate")}</p>
+                          <p className="font-medium text-foreground">{lookupResult.end_date}</p>
+                        </div>
+                      )}
                       <div>
                         <p className="text-xs text-muted-foreground">{t("lookup.pickupLocation")}</p>
                         <p className="font-medium text-foreground">{lookupResult.pickup_location}</p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">{t("lookup.totalPrice")}</p>
-                        <p className="font-bold text-gold">฿{Number(lookupResult.total_price).toLocaleString()}</p>
-                      </div>
+                      {lookupResult.dropoff_location && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t("lookup.dropoffLocation")}</p>
+                          <p className="font-medium text-foreground">{lookupResult.dropoff_location}</p>
+                        </div>
+                      )}
+                      {lookupResult.total_price > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t("lookup.totalPrice")}</p>
+                          <p className="font-bold text-gold">฿{Number(lookupResult.total_price).toLocaleString()}</p>
+                        </div>
+                      )}
                     </div>
                     {lookupResult.notes && (
                       <div>

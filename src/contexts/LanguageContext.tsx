@@ -9,6 +9,8 @@ const translations = {
   "nav.lookup": { th: "ตรวจสอบการจอง", en: "Check Booking" },
   "nav.contact": { th: "ติดต่อเรา", en: "Contact" },
   "nav.bookNow": { th: "จองเลย", en: "Book Now" },
+  "nav.attractions": { th: "ที่เที่ยวน่าสนใจ", en: "Attractions" },
+  "nav.events": { th: "กิจกรรม", en: "Events" },
 
   // Hero
   "hero.tag": { th: "บริการเช่ารถตู้พร้อมคนขับ", en: "Premium Van Rental with Driver" },
@@ -45,6 +47,8 @@ const translations = {
 
   // Booking form
   "booking.title": { th: "จองรถ", en: "Reserve" },
+  "booking.typeDaily": { th: "เช่าเหมาวัน", en: "Daily Rental" },
+  "booking.typeTaxi": { th: "แท็กซี่ / รับ-ส่ง", en: "Taxi / Transfer" },
   "booking.startDate": { th: "วันรับรถ", en: "Start Date" },
   "booking.endDate": { th: "วันคืนรถ", en: "End Date" },
   "booking.pickDate": { th: "เลือกวัน", en: "Pick date" },
@@ -57,13 +61,20 @@ const translations = {
   "booking.phoneHint": { th: "รูปแบบ: 0XX-XXX-XXXX", en: "Thai format: 0XX-XXX-XXXX" },
   "booking.pickup": { th: "จุดรับรถ", en: "Pickup Location" },
   "booking.pickupPlaceholder": { th: "เช่น สนามบินสุวรรณภูมิ อาคาร 2", en: "e.g. Suvarnabhumi Airport, Terminal 2" },
+  "booking.dropoff": { th: "จุดส่ง", en: "Drop-off Location" },
+  "booking.dropoffPlaceholder": { th: "เช่น โรงแรมหาดป่าตอง", en: "e.g. Patong Beach Hotel" },
+  "booking.taxiDate": { th: "วันที่ต้องการ", en: "Date" },
+  "booking.taxiTime": { th: "เวลารับ", en: "Pickup Time" },
   "booking.pickupTime": { th: "เวลารับรถ", en: "Pickup Time" },
   "booking.notes": { th: "หมายเหตุเพิ่มเติม", en: "Additional Notes" },
   "booking.optional": { th: "(ไม่บังคับ)", en: "(optional)" },
-  "booking.notesPlaceholder": { th: "คำขอพิเศษ, จุดส่งรถ, จำนวนผู้โดยสาร...", en: "Special requests, drop-off location, number of passengers..." },
+  "booking.notesPlaceholder": { th: "คำขอพิเศษ, จำนวนผู้โดยสาร...", en: "Special requests, number of passengers..." },
+  "booking.taxiNotesPlaceholder": { th: "จำนวนกระเป๋า, จุดแวะระหว่างทาง...", en: "Number of bags, stops along the way..." },
   "booking.submit": { th: "ยืนยันการจอง", en: "Confirm Booking Request" },
   "booking.submitting": { th: "กำลังส่ง...", en: "Sending..." },
   "booking.confirmNote": { th: "ทีมงานจะติดต่อกลับภายใน 2 ชั่วโมงเพื่อยืนยันการจอง", en: "Our team will contact you within 2 hours to confirm your booking." },
+  "booking.taxiPriceNote": { th: "ทีมงานจะแจ้งราคาให้ทราบหลังยืนยันเส้นทาง", en: "Our team will provide a quote after confirming the route." },
+  "booking.passengers": { th: "จำนวนผู้โดยสาร", en: "Number of Passengers" },
 
   // Success
   "success.title": { th: "จองสำเร็จ!", en: "Booking Confirmed!" },
@@ -74,6 +85,7 @@ const translations = {
   "success.confirmNote": { th: "ทีมงานจะติดต่อกลับภายใน 2 ชั่วโมงเพื่อยืนยันการจอง", en: "Our team will contact you within 2 hours to confirm your booking." },
   "success.chatLine": { th: "แชทผ่าน LINE", en: "Chat via LINE" },
   "success.chatWhatsapp": { th: "ติดต่อผ่าน WhatsApp", en: "Contact via WhatsApp" },
+  "success.taxiNote": { th: "ทีมงานจะติดต่อกลับเพื่อยืนยันเส้นทางและราคา", en: "Our team will contact you to confirm the route and price." },
 
   // Lookup
   "lookup.title": { th: "ค้นหาการจอง", en: "Find Booking" },
@@ -90,8 +102,12 @@ const translations = {
   "lookup.startDate": { th: "วันรับรถ", en: "Start Date" },
   "lookup.endDate": { th: "วันคืนรถ", en: "End Date" },
   "lookup.pickupLocation": { th: "จุดรับรถ", en: "Pickup Location" },
+  "lookup.dropoffLocation": { th: "จุดส่ง", en: "Drop-off" },
   "lookup.totalPrice": { th: "ราคารวม", en: "Total Price" },
   "lookup.notes": { th: "หมายเหตุ", en: "Notes" },
+  "lookup.bookingType": { th: "ประเภท", en: "Type" },
+  "lookup.daily": { th: "เช่าเหมาวัน", en: "Daily Rental" },
+  "lookup.taxi": { th: "แท็กซี่ / รับ-ส่ง", en: "Taxi / Transfer" },
 
   // Status
   "status.confirmed": { th: "ยืนยันแล้ว", en: "Confirmed" },
@@ -99,6 +115,13 @@ const translations = {
   "status.proceed": { th: "กำลังดำเนินการ", en: "In Progress" },
   "status.completed": { th: "เสร็จสิ้น", en: "Completed" },
   "status.cancelled": { th: "ยกเลิก", en: "Cancelled" },
+
+  // Attractions & Events
+  "explore.tag": { th: "ภูเก็ต", en: "Phuket" },
+  "explore.attractions": { th: "ที่เที่ยวน่าสนใจ", en: "Attractions" },
+  "explore.events": { th: "กิจกรรมที่กำลังจะมาถึง", en: "Upcoming Events" },
+  "explore.noAttractions": { th: "ยังไม่มีข้อมูลสถานที่ท่องเที่ยว", en: "No attractions available yet" },
+  "explore.noEvents": { th: "ยังไม่มีกิจกรรมที่กำลังจะมาถึง", en: "No upcoming events" },
 
   // Footer
   "footer.rights": { th: "สงวนลิขสิทธิ์", en: "All rights reserved" },
