@@ -14,12 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      attractions: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          description_en: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          location: string | null
+          sort_order: number
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location?: string | null
+          sort_order?: number
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location?: string | null
+          sort_order?: number
+          title?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_code: string | null
+          booking_type: string
           created_at: string
           customer_name: string
           customer_phone: string
+          dropoff_location: string | null
           end_date: string
           id: string
           notes: string | null
@@ -33,9 +80,11 @@ export type Database = {
         }
         Insert: {
           booking_code?: string | null
+          booking_type?: string
           created_at?: string
           customer_name: string
           customer_phone: string
+          dropoff_location?: string | null
           end_date: string
           id?: string
           notes?: string | null
@@ -49,9 +98,11 @@ export type Database = {
         }
         Update: {
           booking_code?: string | null
+          booking_type?: string
           created_at?: string
           customer_name?: string
           customer_phone?: string
+          dropoff_location?: string | null
           end_date?: string
           id?: string
           notes?: string | null
@@ -116,6 +167,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_en: string | null
+          event_date: string | null
+          event_end_date: string | null
+          event_time: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          location: string | null
+          sort_order: number
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          event_date?: string | null
+          event_end_date?: string | null
+          event_time?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location?: string | null
+          sort_order?: number
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          event_date?: string | null
+          event_end_date?: string | null
+          event_time?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location?: string | null
+          sort_order?: number
+          title?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
