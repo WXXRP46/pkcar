@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Filter, Phone, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type BookingStatus = "pending" | "confirmed" | "proceed" | "completed" | "cancelled";
 
@@ -166,7 +167,6 @@ export default function AdminBookings() {
                         <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", (booking as any).booking_type === "taxi" ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground")}>
                           {(booking as any).booking_type === "taxi" ? "แท็กซี่" : "เช่าเหมาวัน"}
                         </span>
-                      </td>
                       </td>
                       <td className="p-4">
                         <p className="font-medium">{booking.customer_name}</p>
