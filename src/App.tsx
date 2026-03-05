@@ -13,6 +13,8 @@ import AdminCalendar from "./pages/AdminCalendar";
 import AdminCustomers from "./pages/AdminCustomers";
 import AdminReports from "./pages/AdminReports";
 import AdminDrivers from "./pages/AdminDrivers";
+import AdminAttractions from "./pages/AdminAttractions";
+import AdminEvents from "./pages/AdminEvents";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -35,6 +37,8 @@ const App = () => (
           <Route path="/admin/customers" element={<ProtectedRoute><AdminCustomers /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/drivers" element={<ProtectedRoute><AdminDrivers /></ProtectedRoute>} />
+          <Route path="/admin/attractions" element={<ProtectedRoute><AdminAttractions /></ProtectedRoute>} />
+          <Route path="/admin/events" element={<ProtectedRoute><AdminEvents /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
