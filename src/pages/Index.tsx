@@ -16,7 +16,7 @@ import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
   CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf,
   Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon, Globe,
-  Car, Navigation
+  Car, Navigation, CreditCard, QrCode, Banknote, ThumbsUp
 } from "lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
@@ -99,7 +99,7 @@ export default function Index() {
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
 
-  const [form, setForm] = useState({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "" });
+  const [form, setForm] = useState({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "", paymentMethod: "cash" });
   const [submitting, setSubmitting] = useState(false);
   const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number; bookingType: BookingType } | null>(null);
 
@@ -113,6 +113,18 @@ export default function Index() {
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [exploreTab, setExploreTab] = useState<"attractions" | "events">("attractions");
+
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [ratingSearch, setRatingSearch] = useState("");
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingBookings, setRatingBookings] = useState<any[]>([]);
+  const [ratingSelected, setRatingSelected] = useState<any | null>(null);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratingSuccess, setRatingSuccess] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -180,8 +192,73 @@ export default function Index() {
     loadExplore();
   }, []);
 
+  // Load QR URL
+  useEffect(() => {
+    const loadQR = async () => {
+      const { data } = await (supabase as any).from("site_settings").select("value").eq("key", "payment_qr_url").maybeSingle();
+      if (data?.value) setQrUrl(data.value);
+    };
+    loadQR();
+  }, []);
+
   const openDetail = (van: Van) => { setSelectedVan(van); setDetailOpen(true); };
   const openBooking = (van: Van) => { setSelectedVan(van); setDetailOpen(false); setBookingOpen(true); setBookingType("daily_rental"); };
+
+  const handleRatingSearch = async () => {
+    const q = ratingSearch.trim();
+    if (!q) return;
+    setRatingLoading(true);
+    setRatingError("");
+    setRatingBookings([]);
+    setRatingSelected(null);
+    setRatingSuccess(false);
+    const isPhone = /^0\d+$/.test(q.replace(/[-\s]/g, ""));
+    let query = supabase.from("bookings").select("*, vans(name, model, image_url)").eq("status", "completed");
+    if (isPhone) {
+      query = query.eq("customer_phone", q.replace(/[-\s]/g, ""));
+    } else {
+      query = query.eq("booking_code", q.toUpperCase());
+    }
+    const { data } = await query.order("created_at", { ascending: false });
+    if (!data || data.length === 0) {
+      setRatingError(t("rating.notFound"));
+    } else {
+      const bookingIds = data.map((b: any) => b.id);
+      const { data: existingRatings } = await (supabase as any).from("driver_ratings").select("booking_id").in("booking_id", bookingIds);
+      const ratedIds = new Set((existingRatings ?? []).map((r: any) => r.booking_id));
+      setRatingBookings(data.map((b: any) => ({ ...b, alreadyRated: ratedIds.has(b.id) })));
+    }
+    setRatingLoading(false);
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!ratingSelected || ratingValue === 0) return;
+    setRatingSubmitting(true);
+    const { data: driver } = await (supabase as any).from("drivers").select("id, name").eq("van_id", ratingSelected.van_id).maybeSingle();
+    if (!driver) {
+      toast({ title: t("rating.noDriver"), variant: "destructive" });
+      setRatingSubmitting(false);
+      return;
+    }
+    const { error } = await (supabase as any).from("driver_ratings").insert({
+      booking_id: ratingSelected.id,
+      driver_id: driver.id,
+      rating: ratingValue,
+      comment: ratingComment || null,
+      customer_name: ratingSelected.customer_name,
+    });
+    if (error) {
+      toast({ title: t("rating.failed"), description: error.message, variant: "destructive" });
+    } else {
+      setRatingSuccess(true);
+      const selId = ratingSelected.id;
+      setRatingSelected(null);
+      setRatingValue(0);
+      setRatingComment("");
+      setRatingBookings(prev => prev.map(b => b.id === selId ? { ...b, alreadyRated: true } : b));
+    }
+    setRatingSubmitting(false);
+  };
 
   const handleLookup = async () => {
     const q = lookupCode.trim();
@@ -235,6 +312,7 @@ export default function Index() {
       status: "pending",
       booking_type: bookingType,
       dropoff_location: form.dropoff || null,
+      payment_method: form.paymentMethod,
     };
 
     if (bookingType === "daily_rental") {
@@ -263,7 +341,7 @@ export default function Index() {
       });
       setBookingOpen(false);
       setSuccessOpen(true);
-      setForm({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "" });
+      setForm({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "", paymentMethod: "cash" });
       setStartDate(undefined);
       setEndDate(undefined);
     }
@@ -287,6 +365,9 @@ export default function Index() {
             <a href="#why-us" className="hover:text-foreground transition-colors">{t("nav.why")}</a>
             <button onClick={() => setLookupOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
               <Search className="w-3.5 h-3.5" /> {t("nav.lookup")}
+            </button>
+            <button onClick={() => setRatingOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
+              <Star className="w-3.5 h-3.5" /> {t("nav.rating")}
             </button>
             <a href={CONTACT_WHATSAPP} target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">{t("nav.contact")}</a>
           </nav>
@@ -543,16 +624,26 @@ export default function Index() {
         </div>
       </footer>
 
-      {/* Language Toggle */}
-      <button
-        onClick={toggleLang}
-        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95"
-        style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
-        aria-label="Toggle language"
-      >
-        <Globe className="w-4 h-4" />
-        {lang === "th" ? "EN" : "TH"}
-      </button>
+      {/* Floating Buttons */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 items-end">
+        <button
+          onClick={() => setRatingOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95 bg-primary text-primary-foreground"
+          aria-label="Rate driver"
+        >
+          <Star className="w-4 h-4" />
+          {t("nav.rating")}
+        </button>
+        <button
+          onClick={toggleLang}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+          style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
+          aria-label="Toggle language"
+        >
+          <Globe className="w-4 h-4" />
+          {lang === "th" ? "EN" : "TH"}
+        </button>
+      </div>
 
       {/* Van Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
@@ -795,6 +886,42 @@ export default function Index() {
                 />
               </div>
 
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <Label>{t("booking.paymentMethod")}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "credit_card", icon: CreditCard, labelKey: "booking.payCredit" as const, activeClass: "border-accent bg-accent/10 text-foreground" },
+                    { value: "qr_code", icon: QrCode, labelKey: "booking.payQR" as const, activeClass: "border-primary bg-primary/10 text-foreground" },
+                    { value: "cash", icon: Banknote, labelKey: "booking.payCash" as const, activeClass: "border-gold bg-gold/10 text-foreground" },
+                  ].map(pm => (
+                    <button
+                      key={pm.value}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, paymentMethod: pm.value }))}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-xs font-semibold transition-all",
+                        form.paymentMethod === pm.value
+                          ? pm.activeClass + " shadow-sm"
+                          : "border-border bg-card text-muted-foreground hover:border-foreground/30"
+                      )}
+                    >
+                      <pm.icon className="w-5 h-5" />
+                      {t(pm.labelKey)}
+                    </button>
+                  ))}
+                </div>
+                {form.paymentMethod === "qr_code" && qrUrl && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-3 bg-card rounded-xl border border-border text-center">
+                    <img src={qrUrl} alt="QR Payment" className="w-48 h-48 mx-auto rounded-lg object-contain" />
+                    <p className="text-xs text-muted-foreground mt-2">{t("booking.scanQR")}</p>
+                  </motion.div>
+                )}
+                {form.paymentMethod === "cash" && (
+                  <p className="text-xs text-muted-foreground">{t("booking.cashNote")}</p>
+                )}
+              </div>
+
               <Button
                 type="submit"
                 disabled={submitting || !startDate || (bookingType === "daily_rental" && (!endDate || days < 1))}
@@ -1001,6 +1128,136 @@ export default function Index() {
                     )}
                   </div>
                 </div>
+              </motion.div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rating Dialog */}
+      <Dialog open={ratingOpen} onOpenChange={(open) => { setRatingOpen(open); if (!open) { setRatingSearch(""); setRatingBookings([]); setRatingSelected(null); setRatingError(""); setRatingSuccess(false); setRatingValue(0); setRatingComment(""); } }}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-gold" />
+              {t("rating.title")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {!ratingSelected && (
+              <>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder={t("rating.searchPlaceholder")}
+                    value={ratingSearch}
+                    onChange={(e) => setRatingSearch(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === "Enter" && handleRatingSearch()}
+                    className="font-mono tracking-wider uppercase"
+                  />
+                  <Button onClick={handleRatingSearch} disabled={ratingLoading || !ratingSearch.trim()} style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
+                    {ratingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("rating.searchHint")}</p>
+
+                {ratingError && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">{ratingError}</motion.p>
+                )}
+
+                {ratingSuccess && (
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-4 space-y-2">
+                    <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center" style={{ background: "hsl(var(--gold) / 0.1)", border: "2px solid hsl(var(--gold) / 0.4)" }}>
+                      <ThumbsUp className="w-7 h-7 text-gold" />
+                    </div>
+                    <p className="font-bold text-foreground">{t("rating.thankYou")}</p>
+                    <p className="text-sm text-muted-foreground">{t("rating.thankYouDesc")}</p>
+                  </motion.div>
+                )}
+
+                {ratingBookings.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                    <p className="text-sm font-medium">{t("rating.selectTrip")}</p>
+                    {ratingBookings.map((b: any) => (
+                      <div
+                        key={b.id}
+                        onClick={() => !b.alreadyRated && setRatingSelected(b)}
+                        className={cn(
+                          "p-3 rounded-lg border transition-colors",
+                          b.alreadyRated
+                            ? "border-border bg-muted/50 opacity-60 cursor-not-allowed"
+                            : "border-border hover:border-gold/40 cursor-pointer"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-mono text-xs font-bold tracking-wider text-gold">{b.booking_code ?? "—"}</span>
+                            <p className="text-sm font-medium mt-0.5">{b.vans?.name ?? "Van"}</p>
+                          </div>
+                          {b.alreadyRated ? (
+                            <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{t("rating.alreadyRated")}</span>
+                          ) : (
+                            <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">{t("rating.rateNow")}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{b.start_date} • {b.pickup_location}</p>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </>
+            )}
+
+            {ratingSelected && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <button onClick={() => { setRatingSelected(null); setRatingValue(0); setRatingComment(""); }} className="text-xs text-gold hover:underline flex items-center gap-1">
+                  <ChevronLeft className="w-3 h-3" /> {t("rating.backToList")}
+                </button>
+
+                <div className="rounded-xl p-4 border border-border bg-muted/30 text-center space-y-1">
+                  <p className="font-bold text-foreground">{ratingSelected.vans?.name}</p>
+                  <p className="text-xs text-muted-foreground">{ratingSelected.booking_code} • {ratingSelected.start_date}</p>
+                </div>
+
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-semibold">{t("rating.howWas")}</p>
+                  <div className="flex justify-center gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRatingValue(star)}
+                        className="p-1 transition-transform hover:scale-110"
+                      >
+                        <Star className={cn("w-8 h-8 transition-colors", star <= ratingValue ? "fill-gold text-gold" : "text-border")} />
+                      </button>
+                    ))}
+                  </div>
+                  {ratingValue > 0 && (
+                    <p className="text-xs text-gold font-medium">
+                      {ratingValue === 5 ? t("rating.star5") : ratingValue === 4 ? t("rating.star4") : ratingValue === 3 ? t("rating.star3") : ratingValue === 2 ? t("rating.star2") : t("rating.star1")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>{t("rating.comment")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
+                  <Textarea
+                    placeholder={t("rating.commentPlaceholder")}
+                    rows={2}
+                    value={ratingComment}
+                    onChange={(e) => setRatingComment(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  onClick={handleRatingSubmit}
+                  disabled={ratingSubmitting || ratingValue === 0}
+                  className="w-full h-11"
+                  style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
+                >
+                  {ratingSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ThumbsUp className="w-4 h-4 mr-2" />}
+                  {t("rating.submitRating")}
+                </Button>
               </motion.div>
             )}
           </div>

@@ -11,6 +11,7 @@ const translations = {
   "nav.bookNow": { th: "จองเลย", en: "Book Now" },
   "nav.attractions": { th: "ที่เที่ยวน่าสนใจ", en: "Attractions" },
   "nav.events": { th: "กิจกรรม", en: "Events" },
+  "nav.rating": { th: "ให้คะแนนคนขับ", en: "Rate Driver" },
 
   // Hero
   "hero.tag": { th: "บริการเช่ารถตู้พร้อมคนขับ", en: "Premium Van Rental with Driver" },
@@ -75,6 +76,12 @@ const translations = {
   "booking.confirmNote": { th: "ทีมงานจะติดต่อกลับภายใน 2 ชั่วโมงเพื่อยืนยันการจอง", en: "Our team will contact you within 2 hours to confirm your booking." },
   "booking.taxiPriceNote": { th: "ทีมงานจะแจ้งราคาให้ทราบหลังยืนยันเส้นทาง", en: "Our team will provide a quote after confirming the route." },
   "booking.passengers": { th: "จำนวนผู้โดยสาร", en: "Number of Passengers" },
+  "booking.paymentMethod": { th: "วิธีชำระเงิน", en: "Payment Method" },
+  "booking.payCredit": { th: "บัตรเครดิต/เดบิต", en: "Credit/Debit" },
+  "booking.payQR": { th: "QR Code", en: "QR Code" },
+  "booking.payCash": { th: "เงินสด", en: "Cash" },
+  "booking.scanQR": { th: "สแกน QR Code เพื่อชำระเงิน", en: "Scan QR code to pay" },
+  "booking.cashNote": { th: "ชำระเงินสดหลังจากเสร็จสิ้นบริการ", en: "Pay cash after service is completed" },
 
   // Success
   "success.title": { th: "จองสำเร็จ!", en: "Booking Confirmed!" },
@@ -122,6 +129,29 @@ const translations = {
   "explore.events": { th: "กิจกรรมที่กำลังจะมาถึง", en: "Upcoming Events" },
   "explore.noAttractions": { th: "ยังไม่มีข้อมูลสถานที่ท่องเที่ยว", en: "No attractions available yet" },
   "explore.noEvents": { th: "ยังไม่มีกิจกรรมที่กำลังจะมาถึง", en: "No upcoming events" },
+
+  // Rating
+  "rating.title": { th: "ให้คะแนนคนขับ", en: "Rate Your Driver" },
+  "rating.searchPlaceholder": { th: "กรอกรหัสการจอง หรือ เบอร์โทรศัพท์", en: "Enter booking code or phone" },
+  "rating.searchHint": { th: "ค้นหาทริปที่เสร็จสิ้นแล้วเพื่อให้คะแนนคนขับ", en: "Find completed trips to rate your driver" },
+  "rating.notFound": { th: "ไม่พบทริปที่เสร็จสิ้นแล้ว", en: "No completed trips found" },
+  "rating.noDriver": { th: "ไม่พบข้อมูลคนขับสำหรับทริปนี้", en: "No driver found for this trip" },
+  "rating.failed": { th: "ไม่สามารถส่งคะแนนได้", en: "Failed to submit rating" },
+  "rating.selectTrip": { th: "เลือกทริปที่ต้องการให้คะแนน:", en: "Select a trip to rate:" },
+  "rating.alreadyRated": { th: "ให้คะแนนแล้ว", en: "Already rated" },
+  "rating.rateNow": { th: "ให้คะแนน", en: "Rate now" },
+  "rating.backToList": { th: "กลับไปรายการ", en: "Back to list" },
+  "rating.howWas": { th: "คนขับบริการเป็นอย่างไร?", en: "How was your driver?" },
+  "rating.star5": { th: "ยอดเยี่ยม!", en: "Excellent!" },
+  "rating.star4": { th: "ดีมาก", en: "Very Good" },
+  "rating.star3": { th: "ดี", en: "Good" },
+  "rating.star2": { th: "พอใช้", en: "Fair" },
+  "rating.star1": { th: "ต้องปรับปรุง", en: "Needs Improvement" },
+  "rating.comment": { th: "ความคิดเห็น", en: "Comment" },
+  "rating.commentPlaceholder": { th: "แสดงความคิดเห็นเพิ่มเติม...", en: "Share your experience..." },
+  "rating.submitRating": { th: "ส่งคะแนน", en: "Submit Rating" },
+  "rating.thankYou": { th: "ขอบคุณสำหรับคะแนน!", en: "Thank you for your rating!" },
+  "rating.thankYouDesc": { th: "ความคิดเห็นของคุณช่วยให้เราพัฒนาบริการได้ดียิ่งขึ้น", en: "Your feedback helps us improve our service" },
 
   // Footer
   "footer.rights": { th: "สงวนลิขสิทธิ์", en: "All rights reserved" },

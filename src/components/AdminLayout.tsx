@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Car, CalendarCheck, LogOut, Crown, ChevronRight,
-  CalendarDays, Users, BarChart3, UserCircle, Bell, MapPin, Sparkles
+  CalendarDays, Users, BarChart3, UserCircle, Bell, MapPin, Sparkles, Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,10 +13,11 @@ import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
+  { href: "/admin/bookings", label: "การจอง", icon: CalendarCheck },
   { href: "/admin/calendar", label: "ปฏิทิน", icon: CalendarDays },
-  { href: "/admin/fleet", label: "Fleet", icon: Car },
+  { href: "/admin/fleet", label: "รถตู้", icon: Car },
   { href: "/admin/drivers", label: "คนขับ", icon: UserCircle },
+  { href: "/admin/ratings", label: "คะแนนคนขับ", icon: Star },
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
   { href: "/admin/reports", label: "รายงาน", icon: BarChart3 },
   { href: "/admin/attractions", label: "ที่เที่ยว", icon: MapPin },
