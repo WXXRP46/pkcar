@@ -637,26 +637,30 @@ export default function Index() {
           {selectedVan && (
             <form onSubmit={handleSubmit} className="space-y-4 py-2">
               {/* Booking Type Toggle */}
-              <div className="flex gap-2 p-1 bg-muted rounded-xl">
+              <div className="flex gap-2 p-1.5 bg-muted/60 rounded-xl">
                 <button
                   type="button"
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
-                    bookingType === "daily_rental" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2",
+                    bookingType === "daily_rental"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-card/50 text-muted-foreground border-transparent hover:bg-card hover:text-foreground"
                   )}
                   onClick={() => setBookingType("daily_rental")}
                 >
-                  <Car className="w-4 h-4" /> {t("booking.typeDaily")}
+                  <Car className="w-5 h-5" /> {t("booking.typeDaily")}
                 </button>
                 <button
                   type="button"
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
-                    bookingType === "taxi" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2",
+                    bookingType === "taxi"
+                      ? "bg-accent text-accent-foreground border-accent shadow-md"
+                      : "bg-card/50 text-muted-foreground border-transparent hover:bg-card hover:text-foreground"
                   )}
                   onClick={() => setBookingType("taxi")}
                 >
-                  <Navigation className="w-4 h-4" /> {t("booking.typeTaxi")}
+                  <Navigation className="w-5 h-5" /> {t("booking.typeTaxi")}
                 </button>
               </div>
 
