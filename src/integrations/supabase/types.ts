@@ -70,6 +70,7 @@ export type Database = {
           end_date: string
           id: string
           notes: string | null
+          payment_method: string
           pickup_location: string
           pickup_time: string | null
           start_date: string
@@ -88,6 +89,7 @@ export type Database = {
           end_date: string
           id?: string
           notes?: string | null
+          payment_method?: string
           pickup_location: string
           pickup_time?: string | null
           start_date: string
@@ -106,6 +108,7 @@ export type Database = {
           end_date?: string
           id?: string
           notes?: string | null
+          payment_method?: string
           pickup_location?: string
           pickup_time?: string | null
           start_date?: string
@@ -120,6 +123,51 @@ export type Database = {
             columns: ["van_id"]
             isOneToOne: false
             referencedRelation: "vans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_ratings: {
+        Row: {
+          booking_id: string
+          comment: string | null
+          created_at: string
+          customer_name: string | null
+          driver_id: string
+          id: string
+          rating: number
+        }
+        Insert: {
+          booking_id: string
+          comment?: string | null
+          created_at?: string
+          customer_name?: string | null
+          driver_id: string
+          id?: string
+          rating: number
+        }
+        Update: {
+          booking_id?: string
+          comment?: string | null
+          created_at?: string
+          customer_name?: string | null
+          driver_id?: string
+          id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_ratings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_ratings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
         ]
@@ -240,6 +288,27 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string | null
         }
         Relationships: []
       }
