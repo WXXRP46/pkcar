@@ -404,7 +404,7 @@ export default function Index() {
                 <a href="#fleet">{t("hero.browse")} <ArrowRight className="w-4 h-4 ml-2" /></a>
               </Button>
               <Button size="lg" variant="outline" asChild className="h-12 px-7 text-sm font-semibold border-white/25 text-white hover:bg-white/10">
-                <a href="#footer"><Phone className="w-4 h-4 mr-2" /> {t("hero.contactUs")}</a>
+                <a href="#footer" className="text-white bg-[#44d600]"><Phone className="w-4 h-4 mr-2" /> {t("hero.contactUs")}</a>
               </Button>
             </div>
           </motion.div>
