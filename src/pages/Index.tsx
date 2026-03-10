@@ -361,7 +361,7 @@ export default function Index() {
           </a>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#fleet" className="hover:text-foreground transition-colors">{t("nav.fleet")}</a>
-            <a href="#explore" className="hover:text-foreground transition-colors">{t("nav.attractions")}</a>
+            
             <a href="#why-us" className="hover:text-foreground transition-colors">{t("nav.why")}</a>
             
 
