@@ -619,7 +619,7 @@ export default function Index() {
           <div className="flex gap-4 text-xs" style={{ color: "hsl(200 14% 50%)" }}>
             
             
-            <a href="/admin/login" className="hover:text-gold transition-colors">Admin</a>
+            <a href="/admin/login" className="hover:text-gold transition-colors text-center py-0 px-0 my-0 mx-[100px]">Admin</a>
           </div>
         </div>
       </footer>
