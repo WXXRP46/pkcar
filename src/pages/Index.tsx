@@ -617,7 +617,7 @@ export default function Index() {
           </div>
           <p className="text-xs" style={{ color: "hsl(200 14% 45%)" }}>© 2024 GOLDMINE_TRAVEL. {t("footer.rights")}.</p>
           <div className="flex gap-4 text-xs" style={{ color: "hsl(200 14% 50%)" }}>
-            <a href={CONTACT_LINE} target="_blank" rel="noreferrer" className="hover:text-gold transition-colors">LINE</a>
+            
             
             <a href="/admin/login" className="hover:text-gold transition-colors">Admin</a>
           </div>
