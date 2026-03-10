@@ -16,8 +16,8 @@ import {
   Crown, Users, Wifi, Wind, Star, CalendarIcon, MapPin, Phone, User,
   CheckCircle, MessageCircle, ArrowRight, Shield, Clock, ChevronDown, Leaf,
   Search, Copy, Loader2, ChevronLeft, ChevronRight as ChevronRightIcon, Globe,
-  Car, Navigation, CreditCard, QrCode, Banknote, ThumbsUp
-} from "lucide-react";
+  Car, Navigation, CreditCard, QrCode, Banknote, ThumbsUp } from
+"lucide-react";
 import heroVan from "@/assets/hero-van.jpg";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,12 +36,12 @@ interface Van {
   price_per_day: number;
   image_url: string | null;
   description: string | null;
-  features: { wifi: boolean; ac: boolean; vip_seats: boolean };
+  features: {wifi: boolean;ac: boolean;vip_seats: boolean;};
   status: string;
   co2_per_km: number | null;
   images: VanImage[];
   busy: boolean;
-  driver?: { name: string; photo_url: string | null; experience_years: number; description: string | null } | null;
+  driver?: {name: string;photo_url: string | null;experience_years: number;description: string | null;} | null;
 }
 
 interface Attraction {
@@ -74,12 +74,12 @@ const CONTACT_WHATSAPP = "https://wa.me/66800000000";
 
 function getStatusText(status: string, t: (key: any) => string) {
   switch (status) {
-    case "confirmed": return t("status.confirmed");
-    case "pending": return t("status.pending");
-    case "proceed": return t("status.proceed");
-    case "completed": return t("status.completed");
-    case "cancelled": return t("status.cancelled");
-    default: return status;
+    case "confirmed":return t("status.confirmed");
+    case "pending":return t("status.pending");
+    case "proceed":return t("status.proceed");
+    case "completed":return t("status.completed");
+    case "cancelled":return t("status.cancelled");
+    default:return status;
   }
 }
 
@@ -101,7 +101,7 @@ export default function Index() {
 
   const [form, setForm] = useState({ name: "", phone: "", pickup: "", dropoff: "", pickupTime: "", notes: "", passengers: "", paymentMethod: "cash" });
   const [submitting, setSubmitting] = useState(false);
-  const [bookingSummary, setBookingSummary] = useState<{ vanName: string; startDate: string; endDate: string; days: number; totalPrice: number; bookingType: BookingType } | null>(null);
+  const [bookingSummary, setBookingSummary] = useState<{vanName: string;startDate: string;endDate: string;days: number;totalPrice: number;bookingType: BookingType;} | null>(null);
 
   const [lookupCode, setLookupCode] = useState("");
   const [lookupOpen, setLookupOpen] = useState(false);
@@ -131,13 +131,13 @@ export default function Index() {
 
   // Konami code
   useEffect(() => {
-    const konamiCode = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","a","b"];
+    const konamiCode = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "a", "b"];
     let index = 0;
     const handler = (e: KeyboardEvent) => {
       if (e.key === konamiCode[index]) {
         index++;
-        if (index === konamiCode.length) { navigate("/admin/login"); index = 0; }
-      } else { index = 0; }
+        if (index === konamiCode.length) {navigate("/admin/login");index = 0;}
+      } else {index = 0;}
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -150,9 +150,9 @@ export default function Index() {
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from("vans").select("*").eq("status", "available");
-      const vansRaw = ((data as any[]) ?? []).map((v) => ({ ...v, features: v.features as { wifi: boolean; ac: boolean; vip_seats: boolean }, images: [] as VanImage[], busy: false }));
-      
-      const vanIds = vansRaw.map(v => v.id);
+      const vansRaw = (data as any[] ?? []).map((v) => ({ ...v, features: v.features as {wifi: boolean;ac: boolean;vip_seats: boolean;}, images: [] as VanImage[], busy: false }));
+
+      const vanIds = vansRaw.map((v) => v.id);
       if (vanIds.length > 0) {
         const { data: imagesData } = await supabase.from("van_images").select("*").in("van_id", vanIds).order("sort_order");
         const imagesByVan: Record<string, VanImage[]> = {};
@@ -160,19 +160,19 @@ export default function Index() {
           if (!imagesByVan[img.van_id]) imagesByVan[img.van_id] = [];
           imagesByVan[img.van_id].push(img);
         });
-        vansRaw.forEach(v => { v.images = imagesByVan[v.id] ?? []; });
+        vansRaw.forEach((v) => {v.images = imagesByVan[v.id] ?? [];});
 
-        const { data: activeBookings } = await supabase
-          .from("bookings").select("van_id").in("van_id", vanIds).in("status", ["confirmed", "proceed"]);
+        const { data: activeBookings } = await supabase.
+        from("bookings").select("van_id").in("van_id", vanIds).in("status", ["confirmed", "proceed"]);
         const busyVanIds = new Set((activeBookings ?? []).map((b: any) => b.van_id));
-        vansRaw.forEach(v => { v.busy = busyVanIds.has(v.id); });
+        vansRaw.forEach((v) => {v.busy = busyVanIds.has(v.id);});
 
         const { data: driversData } = await (supabase as any).from("drivers").select("van_id, name, photo_url, experience_years, description").in("van_id", vanIds);
         const driversByVan: Record<string, any> = {};
-        (driversData ?? []).forEach((d: any) => { if (d.van_id) driversByVan[d.van_id] = d; });
-        vansRaw.forEach(v => { v.driver = driversByVan[v.id] ?? null; });
+        (driversData ?? []).forEach((d: any) => {if (d.van_id) driversByVan[d.van_id] = d;});
+        vansRaw.forEach((v) => {v.driver = driversByVan[v.id] ?? null;});
       }
-      
+
       setVans(vansRaw);
       setLoading(false);
     };
@@ -183,11 +183,11 @@ export default function Index() {
   useEffect(() => {
     const loadExplore = async () => {
       const [attrRes, evtRes] = await Promise.all([
-        (supabase as any).from("attractions").select("*").eq("is_active", true).order("sort_order"),
-        (supabase as any).from("events").select("*").eq("is_active", true).order("event_date"),
-      ]);
-      setAttractions((attrRes.data as Attraction[]) ?? []);
-      setEvents((evtRes.data as EventItem[]) ?? []);
+      (supabase as any).from("attractions").select("*").eq("is_active", true).order("sort_order"),
+      (supabase as any).from("events").select("*").eq("is_active", true).order("event_date")]
+      );
+      setAttractions(attrRes.data as Attraction[] ?? []);
+      setEvents(evtRes.data as EventItem[] ?? []);
     };
     loadExplore();
   }, []);
@@ -201,8 +201,8 @@ export default function Index() {
     loadQR();
   }, []);
 
-  const openDetail = (van: Van) => { setSelectedVan(van); setDetailOpen(true); };
-  const openBooking = (van: Van) => { setSelectedVan(van); setDetailOpen(false); setBookingOpen(true); setBookingType("daily_rental"); };
+  const openDetail = (van: Van) => {setSelectedVan(van);setDetailOpen(true);};
+  const openBooking = (van: Van) => {setSelectedVan(van);setDetailOpen(false);setBookingOpen(true);setBookingType("daily_rental");};
 
   const handleRatingSearch = async () => {
     const q = ratingSearch.trim();
@@ -245,7 +245,7 @@ export default function Index() {
       driver_id: driver.id,
       rating: ratingValue,
       comment: ratingComment || null,
-      customer_name: ratingSelected.customer_name,
+      customer_name: ratingSelected.customer_name
     });
     if (error) {
       toast({ title: t("rating.failed"), description: error.message, variant: "destructive" });
@@ -255,7 +255,7 @@ export default function Index() {
       setRatingSelected(null);
       setRatingValue(0);
       setRatingComment("");
-      setRatingBookings(prev => prev.map(b => b.id === selId ? { ...b, alreadyRated: true } : b));
+      setRatingBookings((prev) => prev.map((b) => b.id === selId ? { ...b, alreadyRated: true } : b));
     }
     setRatingSubmitting(false);
   };
@@ -271,12 +271,12 @@ export default function Index() {
     const isPhone = /^0\d+$/.test(q.replace(/[-\s]/g, ""));
     if (isPhone) {
       const { data } = await supabase.from("bookings").select("*, vans(name, model, image_url)").eq("customer_phone", q.replace(/[-\s]/g, "")).order("created_at", { ascending: false });
-      if (!data || data.length === 0) { setLookupError(t("lookup.notFoundPhone")); }
-      else { setLookupResults(data); }
+      if (!data || data.length === 0) {setLookupError(t("lookup.notFoundPhone"));} else
+      {setLookupResults(data);}
     } else {
       const { data, error } = await supabase.from("bookings").select("*, vans(name, model, image_url)").eq("booking_code", q.toUpperCase()).maybeSingle();
-      if (error || !data) { setLookupError(t("lookup.notFoundCode")); }
-      else { setLookupResult(data); }
+      if (error || !data) {setLookupError(t("lookup.notFoundCode"));} else
+      {setLookupResult(data);}
     }
     setLookupLoading(false);
   };
@@ -312,7 +312,7 @@ export default function Index() {
       status: "pending",
       booking_type: bookingType,
       dropoff_location: form.dropoff || null,
-      payment_method: form.paymentMethod,
+      payment_method: form.paymentMethod
     };
 
     if (bookingType === "daily_rental") {
@@ -337,7 +337,7 @@ export default function Index() {
         endDate: bookingType === "daily_rental" ? format(endDate!, "d MMM yyyy") : format(startDate!, "d MMM yyyy"),
         days: bookingType === "daily_rental" ? days : 0,
         totalPrice: bookingType === "daily_rental" ? totalPrice : 0,
-        bookingType,
+        bookingType
       });
       setBookingOpen(false);
       setSuccessOpen(true);
@@ -363,9 +363,9 @@ export default function Index() {
             <a href="#fleet" className="hover:text-foreground transition-colors">{t("nav.fleet")}</a>
             <a href="#explore" className="hover:text-foreground transition-colors">{t("nav.attractions")}</a>
             <a href="#why-us" className="hover:text-foreground transition-colors">{t("nav.why")}</a>
-            <button onClick={() => setLookupOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
-              <Search className="w-3.5 h-3.5" /> {t("nav.lookup")}
-            </button>
+            
+
+            
             <button onClick={() => setRatingOpen(true)} className="hover:text-foreground transition-colors flex items-center gap-1">
               <Star className="w-3.5 h-3.5" /> {t("nav.rating")}
             </button>
@@ -425,18 +425,18 @@ export default function Index() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
-              { icon: Shield, titleKey: "why.licensed.title" as const, descKey: "why.licensed.desc" as const },
-              { icon: Clock, titleKey: "why.247.title" as const, descKey: "why.247.desc" as const },
-              { icon: Star, titleKey: "why.vip.title" as const, descKey: "why.vip.desc" as const },
-            ].map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
+            { icon: Shield, titleKey: "why.licensed.title" as const, descKey: "why.licensed.desc" as const },
+            { icon: Clock, titleKey: "why.247.title" as const, descKey: "why.247.desc" as const },
+            { icon: Star, titleKey: "why.vip.title" as const, descKey: "why.vip.desc" as const }].
+            map((item, i) =>
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
                 <div className="w-14 h-14 rounded-xl mx-auto mb-4 flex items-center justify-center" style={{ background: "hsl(var(--gold) / 0.15)", border: "1px solid hsl(var(--gold) / 0.3)" }}>
                   <item.icon className="w-6 h-6 text-gold" />
                 </div>
                 <h3 className="text-base font-semibold text-white mb-2">{t(item.titleKey)}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: "hsl(195 20% 60%)" }}>{t(item.descKey)}</p>
               </motion.div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -451,16 +451,16 @@ export default function Index() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {loading ? Array.from({ length: 4 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            )) : vans.map((van, i) => (
-              <motion.div key={van.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }} className="group cursor-pointer" onClick={() => openDetail(van)}>
+            {loading ? Array.from({ length: 4 }).map((_, i) =>
+            <SkeletonCard key={i} />
+            ) : vans.map((van, i) =>
+            <motion.div key={van.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }} className="group cursor-pointer" onClick={() => openDetail(van)}>
                 <div className={cn("bg-card rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-400 border border-border hover:border-gold/30", van.busy && "opacity-75")}>
                   <div className="relative">
                     <VanImageCarousel van={van} height="h-52" noImageText={t("fleet.noImage")} />
-                    {van.busy && (
-                      <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">{t("fleet.busy")}</div>
-                    )}
+                    {van.busy &&
+                  <div className="absolute top-3 right-3 bg-destructive text-destructive-foreground text-xs font-semibold px-3 py-1 rounded-full">{t("fleet.busy")}</div>
+                  }
                   </div>
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-2">
@@ -478,133 +478,133 @@ export default function Index() {
                       <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
                         <Users className="w-3 h-3" /> {van.seats} {t("fleet.seats")}
                       </span>
-                      {van.features.wifi && (
-                        <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full"><Wifi className="w-3 h-3" /> WiFi</span>
-                      )}
-                      {van.features.ac && (
-                        <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full"><Wind className="w-3 h-3" /> AC</span>
-                      )}
-                      {van.co2_per_km != null && (
-                        <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                      {van.features.wifi &&
+                    <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full"><Wifi className="w-3 h-3" /> WiFi</span>
+                    }
+                      {van.features.ac &&
+                    <span className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full"><Wind className="w-3 h-3" /> AC</span>
+                    }
+                      {van.co2_per_km != null &&
+                    <span className="flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
                           <Leaf className="w-3 h-3" /> {van.co2_per_km}g CO₂/km
                         </span>
-                      )}
+                    }
                     </div>
 
-                    {van.driver && (
-                      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                        {van.driver.photo_url ? (
-                          <img src={van.driver.photo_url} alt="" className="w-5 h-5 rounded-full object-cover" />
-                        ) : (
-                          <User className="w-3.5 h-3.5" />
-                        )}
+                    {van.driver &&
+                  <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                        {van.driver.photo_url ?
+                    <img src={van.driver.photo_url} alt="" className="w-5 h-5 rounded-full object-cover" /> :
+
+                    <User className="w-3.5 h-3.5" />
+                    }
                         <span>{t("fleet.driver")}: {van.driver.name}</span>
                       </div>
-                    )}
+                  }
 
                     <Button
-                      className="w-full h-10 text-sm font-semibold"
-                      style={{ background: van.busy ? "hsl(var(--muted))" : "hsl(var(--primary))", color: van.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary-foreground))" }}
-                      disabled={van.busy}
-                      onClick={(e) => { e.stopPropagation(); openBooking(van); }}
-                    >
+                    className="w-full h-10 text-sm font-semibold"
+                    style={{ background: van.busy ? "hsl(var(--muted))" : "hsl(var(--primary))", color: van.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary-foreground))" }}
+                    disabled={van.busy}
+                    onClick={(e) => {e.stopPropagation();openBooking(van);}}>
+                    
                       {van.busy ? t("fleet.busy") : t("fleet.book")}
                     </Button>
                   </div>
                 </div>
               </motion.div>
-            ))}
+            )}
           </div>
         </div>
       </section>
 
       {/* Explore: Attractions & Events */}
-      {(attractions.length > 0 || events.length > 0) && (
-        <section id="explore" className="py-20 px-4 sm:px-6 bg-muted/30">
+      {(attractions.length > 0 || events.length > 0) &&
+      <section id="explore" className="py-20 px-4 sm:px-6 bg-muted/30">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
               <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">{t("explore.tag")}</p>
               <div className="flex justify-center gap-3 mt-4">
                 <Button
-                  variant={exploreTab === "attractions" ? "default" : "outline"}
-                  onClick={() => setExploreTab("attractions")}
-                  className={cn("gap-2", exploreTab === "attractions" && "bg-primary text-primary-foreground")}
-                >
+                variant={exploreTab === "attractions" ? "default" : "outline"}
+                onClick={() => setExploreTab("attractions")}
+                className={cn("gap-2", exploreTab === "attractions" && "bg-primary text-primary-foreground")}>
+                
                   <MapPin className="w-4 h-4" /> {t("explore.attractions")}
                 </Button>
                 <Button
-                  variant={exploreTab === "events" ? "default" : "outline"}
-                  onClick={() => setExploreTab("events")}
-                  className={cn("gap-2", exploreTab === "events" && "bg-primary text-primary-foreground")}
-                >
+                variant={exploreTab === "events" ? "default" : "outline"}
+                onClick={() => setExploreTab("events")}
+                className={cn("gap-2", exploreTab === "events" && "bg-primary text-primary-foreground")}>
+                
                   <CalendarIcon className="w-4 h-4" /> {t("explore.events")}
                 </Button>
               </div>
             </div>
 
             <AnimatePresence mode="wait">
-              {exploreTab === "attractions" && (
-                <motion.div key="attractions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {attractions.length === 0 ? (
-                    <p className="col-span-full text-center text-muted-foreground py-8">{t("explore.noAttractions")}</p>
-                  ) : attractions.map((a, i) => (
-                    <motion.div key={a.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+              {exploreTab === "attractions" &&
+            <motion.div key="attractions" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {attractions.length === 0 ?
+              <p className="col-span-full text-center text-muted-foreground py-8">{t("explore.noAttractions")}</p> :
+              attractions.map((a, i) =>
+              <motion.div key={a.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                       <div className="bg-card rounded-2xl overflow-hidden shadow-card border border-border hover:border-gold/30 transition-all">
-                        {a.image_url ? (
-                          <img src={a.image_url} alt={a.title} className="w-full h-44 object-cover" />
-                        ) : (
-                          <div className="w-full h-44 bg-muted flex items-center justify-center"><MapPin className="w-10 h-10 text-muted-foreground" /></div>
-                        )}
+                        {a.image_url ?
+                  <img src={a.image_url} alt={a.title} className="w-full h-44 object-cover" /> :
+
+                  <div className="w-full h-44 bg-muted flex items-center justify-center"><MapPin className="w-10 h-10 text-muted-foreground" /></div>
+                  }
                         <div className="p-4">
                           <h3 className="font-bold text-foreground">{lang === "en" && a.title_en ? a.title_en : a.title}</h3>
                           {a.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{a.location}</p>}
-                          {(lang === "en" ? a.description_en || a.description : a.description) && (
-                            <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{lang === "en" ? a.description_en || a.description : a.description}</p>
-                          )}
+                          {(lang === "en" ? a.description_en || a.description : a.description) &&
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{lang === "en" ? a.description_en || a.description : a.description}</p>
+                    }
                         </div>
                       </div>
                     </motion.div>
-                  ))}
-                </motion.div>
               )}
-              {exploreTab === "events" && (
-                <motion.div key="events" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {events.length === 0 ? (
-                    <p className="col-span-full text-center text-muted-foreground py-8">{t("explore.noEvents")}</p>
-                  ) : events.map((ev, i) => (
-                    <motion.div key={ev.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                </motion.div>
+            }
+              {exploreTab === "events" &&
+            <motion.div key="events" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {events.length === 0 ?
+              <p className="col-span-full text-center text-muted-foreground py-8">{t("explore.noEvents")}</p> :
+              events.map((ev, i) =>
+              <motion.div key={ev.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                       <div className="bg-card rounded-2xl overflow-hidden shadow-card border border-border hover:border-gold/30 transition-all">
-                        {ev.image_url ? (
-                          <img src={ev.image_url} alt={ev.title} className="w-full h-44 object-cover" />
-                        ) : (
-                          <div className="w-full h-44 bg-muted flex items-center justify-center"><CalendarIcon className="w-10 h-10 text-muted-foreground" /></div>
-                        )}
+                        {ev.image_url ?
+                  <img src={ev.image_url} alt={ev.title} className="w-full h-44 object-cover" /> :
+
+                  <div className="w-full h-44 bg-muted flex items-center justify-center"><CalendarIcon className="w-10 h-10 text-muted-foreground" /></div>
+                  }
                         <div className="p-4">
                           <h3 className="font-bold text-foreground">{lang === "en" && ev.title_en ? ev.title_en : ev.title}</h3>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            {ev.event_date && (
-                              <span className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full flex items-center gap-1">
+                            {ev.event_date &&
+                      <span className="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full flex items-center gap-1">
                                 <CalendarIcon className="w-3 h-3" /> {ev.event_date}{ev.event_end_date ? ` - ${ev.event_end_date}` : ""}
                               </span>
-                            )}
-                            {ev.event_time && (
-                              <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {ev.event_time}</span>
-                            )}
+                      }
+                            {ev.event_time &&
+                      <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {ev.event_time}</span>
+                      }
                           </div>
                           {ev.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{ev.location}</p>}
-                          {(lang === "en" ? ev.description_en || ev.description : ev.description) && (
-                            <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{lang === "en" ? ev.description_en || ev.description : ev.description}</p>
-                          )}
+                          {(lang === "en" ? ev.description_en || ev.description : ev.description) &&
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{lang === "en" ? ev.description_en || ev.description : ev.description}</p>
+                    }
                         </div>
                       </div>
                     </motion.div>
-                  ))}
-                </motion.div>
               )}
+                </motion.div>
+            }
             </AnimatePresence>
           </div>
         </section>
-      )}
+      }
 
       {/* Footer */}
       <footer id="footer" style={{ background: "hsl(var(--primary))" }} className="py-10 px-4 sm:px-6">
@@ -629,8 +629,8 @@ export default function Index() {
         <button
           onClick={() => setRatingOpen(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95 bg-primary text-primary-foreground"
-          aria-label="Rate driver"
-        >
+          aria-label="Rate driver">
+          
           <Star className="w-4 h-4" />
           {t("nav.rating")}
         </button>
@@ -638,8 +638,8 @@ export default function Index() {
           onClick={toggleLang}
           className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all hover:scale-105 active:scale-95"
           style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
-          aria-label="Toggle language"
-        >
+          aria-label="Toggle language">
+          
           <Globe className="w-4 h-4" />
           {lang === "th" ? "EN" : "TH"}
         </button>
@@ -648,8 +648,8 @@ export default function Index() {
       {/* Van Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          {selectedVan && (
-            <>
+          {selectedVan &&
+          <>
               <div className="relative">
                 <VanImageCarousel van={selectedVan} height="h-64" rounded="rounded-t-lg" noImageText={t("fleet.noImage")} />
                 <div className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none">
@@ -665,53 +665,53 @@ export default function Index() {
                     </span>
                     {selectedVan.features.wifi && <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs"><Wifi className="w-3 h-3" /> WiFi</span>}
                     {selectedVan.features.ac && <span className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-xs"><Wind className="w-3 h-3" /> AC</span>}
-                    {selectedVan.co2_per_km != null && (
-                      <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs">
+                    {selectedVan.co2_per_km != null &&
+                  <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs">
                         <Leaf className="w-3 h-3" /> {selectedVan.co2_per_km}g CO₂/km
                       </span>
-                    )}
+                  }
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-gold">฿{Number(selectedVan.price_per_day).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">{t("fleet.perDay")}</p>
                   </div>
                 </div>
-                {selectedVan.description && (
-                  <p className="text-sm text-muted-foreground leading-relaxed">{selectedVan.description}</p>
-                )}
-                {selectedVan.driver && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
-                    {selectedVan.driver.photo_url ? (
-                      <img src={selectedVan.driver.photo_url} alt={selectedVan.driver.name} className="w-12 h-12 rounded-full object-cover border-2 border-gold/30" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gold/15 text-gold font-bold">
+                {selectedVan.description &&
+              <p className="text-sm text-muted-foreground leading-relaxed">{selectedVan.description}</p>
+              }
+                {selectedVan.driver &&
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
+                    {selectedVan.driver.photo_url ?
+                <img src={selectedVan.driver.photo_url} alt={selectedVan.driver.name} className="w-12 h-12 rounded-full object-cover border-2 border-gold/30" /> :
+
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gold/15 text-gold font-bold">
                         {selectedVan.driver.name[0]}
                       </div>
-                    )}
+                }
                     <div>
                       <p className="text-sm font-semibold flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-gold" /> {t("fleet.driver")}: {selectedVan.driver.name}
                       </p>
-                      {selectedVan.driver.experience_years > 0 && (
-                        <p className="text-xs text-muted-foreground">{t("fleet.experience")} {selectedVan.driver.experience_years} {t("fleet.years")}</p>
-                      )}
-                      {selectedVan.driver.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedVan.driver.description}</p>
-                      )}
+                      {selectedVan.driver.experience_years > 0 &&
+                  <p className="text-xs text-muted-foreground">{t("fleet.experience")} {selectedVan.driver.experience_years} {t("fleet.years")}</p>
+                  }
+                      {selectedVan.driver.description &&
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{selectedVan.driver.description}</p>
+                  }
                     </div>
                   </div>
-                )}
+              }
                 <Button
-                  className="w-full h-12 text-sm font-semibold"
-                  style={{ background: selectedVan.busy ? "hsl(var(--muted))" : "hsl(var(--gold))", color: selectedVan.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))" }}
-                  disabled={selectedVan.busy}
-                  onClick={() => openBooking(selectedVan)}
-                >
+                className="w-full h-12 text-sm font-semibold"
+                style={{ background: selectedVan.busy ? "hsl(var(--muted))" : "hsl(var(--gold))", color: selectedVan.busy ? "hsl(var(--muted-foreground))" : "hsl(var(--primary))" }}
+                disabled={selectedVan.busy}
+                onClick={() => openBooking(selectedVan)}>
+                
                   {selectedVan.busy ? t("fleet.busy") : t("nav.bookNow")} {!selectedVan.busy && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               </div>
             </>
-          )}
+          }
         </DialogContent>
       </Dialog>
 
@@ -725,38 +725,38 @@ export default function Index() {
             </DialogTitle>
           </DialogHeader>
 
-          {selectedVan && (
-            <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {selectedVan &&
+          <form onSubmit={handleSubmit} className="space-y-4 py-2">
               {/* Booking Type Toggle */}
               <div className="flex gap-2 p-1.5 bg-muted/60 rounded-xl">
                 <button
-                  type="button"
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2",
-                    bookingType === "daily_rental"
-                      ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-card/50 text-muted-foreground border-transparent hover:bg-card hover:text-foreground"
-                  )}
-                  onClick={() => setBookingType("daily_rental")}
-                >
+                type="button"
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2",
+                  bookingType === "daily_rental" ?
+                  "bg-primary text-primary-foreground border-primary shadow-md" :
+                  "bg-card/50 text-muted-foreground border-transparent hover:bg-card hover:text-foreground"
+                )}
+                onClick={() => setBookingType("daily_rental")}>
+                
                   <Car className="w-5 h-5" /> {t("booking.typeDaily")}
                 </button>
                 <button
-                  type="button"
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2",
-                    bookingType === "taxi"
-                      ? "bg-accent text-accent-foreground border-accent shadow-md"
-                      : "bg-card/50 text-muted-foreground border-transparent hover:bg-card hover:text-foreground"
-                  )}
-                  onClick={() => setBookingType("taxi")}
-                >
+                type="button"
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all border-2",
+                  bookingType === "taxi" ?
+                  "bg-accent text-accent-foreground border-accent shadow-md" :
+                  "bg-card/50 text-muted-foreground border-transparent hover:bg-card hover:text-foreground"
+                )}
+                onClick={() => setBookingType("taxi")}>
+                
                   <Navigation className="w-5 h-5" /> {t("booking.typeTaxi")}
                 </button>
               </div>
 
-              {bookingType === "daily_rental" ? (
-                <>
+              {bookingType === "daily_rental" ?
+            <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label>{t("booking.startDate")}</Label>
@@ -768,7 +768,7 @@ export default function Index() {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartOpen(false); }} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
+                          <Calendar mode="single" selected={startDate} onSelect={(d) => {setStartDate(d);setStartOpen(false);}} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -782,21 +782,21 @@ export default function Index() {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={endDate} onSelect={(d) => { setEndDate(d); setEndOpen(false); }} disabled={(d) => !startDate || !isAfter(d, startDate)} initialFocus className="p-3 pointer-events-auto" />
+                          <Calendar mode="single" selected={endDate} onSelect={(d) => {setEndDate(d);setEndOpen(false);}} disabled={(d) => !startDate || !isAfter(d, startDate)} initialFocus className="p-3 pointer-events-auto" />
                         </PopoverContent>
                       </Popover>
                     </div>
                   </div>
 
-                  {days > 0 && (
-                    <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl p-4 text-sm flex items-center justify-between" style={{ background: "hsl(var(--gold) / 0.08)", border: "1px solid hsl(var(--gold) / 0.25)" }}>
+                  {days > 0 &&
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl p-4 text-sm flex items-center justify-between" style={{ background: "hsl(var(--gold) / 0.08)", border: "1px solid hsl(var(--gold) / 0.25)" }}>
                       <span className="text-muted-foreground">฿{Number(selectedVan.price_per_day).toLocaleString()} × {days} {days > 1 ? t("booking.days") : t("booking.day")}</span>
                       <span className="text-lg font-bold text-gold">฿{totalPrice.toLocaleString()}</span>
                     </motion.div>
-                  )}
-                </>
-              ) : (
-                <>
+              }
+                </> :
+
+            <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label>{t("booking.taxiDate")}</Label>
@@ -808,7 +808,7 @@ export default function Index() {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={startDate} onSelect={(d) => { setStartDate(d); setStartOpen(false); }} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
+                          <Calendar mode="single" selected={startDate} onSelect={(d) => {setStartDate(d);setStartOpen(false);}} disabled={(d) => !isAfter(d, new Date())} initialFocus className="p-3 pointer-events-auto" />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -816,7 +816,7 @@ export default function Index() {
                       <Label>{t("booking.taxiTime")}</Label>
                       <div className="relative">
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input type="time" className="pl-9" value={form.pickupTime} onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))} required />
+                        <Input type="time" className="pl-9" value={form.pickupTime} onChange={(e) => setForm((f) => ({ ...f, pickupTime: e.target.value }))} required />
                       </div>
                     </div>
                   </div>
@@ -825,17 +825,17 @@ export default function Index() {
                     <Label>{t("booking.passengers")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
                     <div className="relative">
                       <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input type="number" min={1} max={20} placeholder="1-20" className="pl-9" value={form.passengers} onChange={(e) => setForm(f => ({ ...f, passengers: e.target.value }))} />
+                      <Input type="number" min={1} max={20} placeholder="1-20" className="pl-9" value={form.passengers} onChange={(e) => setForm((f) => ({ ...f, passengers: e.target.value }))} />
                     </div>
                   </div>
                 </>
-              )}
+            }
 
               <div className="space-y-1.5">
                 <Label>{t("booking.name")}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder={t("booking.namePlaceholder")} className="pl-9" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
+                  <Input placeholder={t("booking.namePlaceholder")} className="pl-9" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
                 </div>
               </div>
 
@@ -843,7 +843,7 @@ export default function Index() {
                 <Label>{t("booking.phone")}</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder={t("booking.phonePlaceholder")} className="pl-9" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} required />
+                  <Input placeholder={t("booking.phonePlaceholder")} className="pl-9" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} required />
                 </div>
                 <p className="text-xs text-muted-foreground">{t("booking.phoneHint")}</p>
               </div>
@@ -852,38 +852,38 @@ export default function Index() {
                 <Label>{t("booking.pickup")}</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder={t("booking.pickupPlaceholder")} className="pl-9" value={form.pickup} onChange={(e) => setForm(f => ({ ...f, pickup: e.target.value }))} required />
+                  <Input placeholder={t("booking.pickupPlaceholder")} className="pl-9" value={form.pickup} onChange={(e) => setForm((f) => ({ ...f, pickup: e.target.value }))} required />
                 </div>
               </div>
 
-              {bookingType === "taxi" && (
-                <div className="space-y-1.5">
+              {bookingType === "taxi" &&
+            <div className="space-y-1.5">
                   <Label>{t("booking.dropoff")}</Label>
                   <div className="relative">
                     <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder={t("booking.dropoffPlaceholder")} className="pl-9" value={form.dropoff} onChange={(e) => setForm(f => ({ ...f, dropoff: e.target.value }))} required />
+                    <Input placeholder={t("booking.dropoffPlaceholder")} className="pl-9" value={form.dropoff} onChange={(e) => setForm((f) => ({ ...f, dropoff: e.target.value }))} required />
                   </div>
                 </div>
-              )}
+            }
 
-              {bookingType === "daily_rental" && (
-                <div className="space-y-1.5">
+              {bookingType === "daily_rental" &&
+            <div className="space-y-1.5">
                   <Label>{t("booking.pickupTime")}</Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input type="time" placeholder="08:00" className="pl-9" value={form.pickupTime} onChange={(e) => setForm(f => ({ ...f, pickupTime: e.target.value }))} />
+                    <Input type="time" placeholder="08:00" className="pl-9" value={form.pickupTime} onChange={(e) => setForm((f) => ({ ...f, pickupTime: e.target.value }))} />
                   </div>
                 </div>
-              )}
+            }
 
               <div className="space-y-1.5">
                 <Label>{t("booking.notes")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
                 <Textarea
-                  placeholder={bookingType === "taxi" ? t("booking.taxiNotesPlaceholder") : t("booking.notesPlaceholder")}
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
-                />
+                placeholder={bookingType === "taxi" ? t("booking.taxiNotesPlaceholder") : t("booking.notesPlaceholder")}
+                rows={2}
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+              
               </div>
 
               {/* Payment Method */}
@@ -891,50 +891,50 @@ export default function Index() {
                 <Label>{t("booking.paymentMethod")}</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: "credit_card", icon: CreditCard, labelKey: "booking.payCredit" as const, activeClass: "border-accent bg-accent/10 text-foreground" },
-                    { value: "qr_code", icon: QrCode, labelKey: "booking.payQR" as const, activeClass: "border-primary bg-primary/10 text-foreground" },
-                    { value: "cash", icon: Banknote, labelKey: "booking.payCash" as const, activeClass: "border-gold bg-gold/10 text-foreground" },
-                  ].map(pm => (
-                    <button
-                      key={pm.value}
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, paymentMethod: pm.value }))}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-xs font-semibold transition-all",
-                        form.paymentMethod === pm.value
-                          ? pm.activeClass + " shadow-sm"
-                          : "border-border bg-card text-muted-foreground hover:border-foreground/30"
-                      )}
-                    >
+                { value: "credit_card", icon: CreditCard, labelKey: "booking.payCredit" as const, activeClass: "border-accent bg-accent/10 text-foreground" },
+                { value: "qr_code", icon: QrCode, labelKey: "booking.payQR" as const, activeClass: "border-primary bg-primary/10 text-foreground" },
+                { value: "cash", icon: Banknote, labelKey: "booking.payCash" as const, activeClass: "border-gold bg-gold/10 text-foreground" }].
+                map((pm) =>
+                <button
+                  key={pm.value}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, paymentMethod: pm.value }))}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-xs font-semibold transition-all",
+                    form.paymentMethod === pm.value ?
+                    pm.activeClass + " shadow-sm" :
+                    "border-border bg-card text-muted-foreground hover:border-foreground/30"
+                  )}>
+                  
                       <pm.icon className="w-5 h-5" />
                       {t(pm.labelKey)}
                     </button>
-                  ))}
+                )}
                 </div>
-                {form.paymentMethod === "qr_code" && qrUrl && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-3 bg-card rounded-xl border border-border text-center">
+                {form.paymentMethod === "qr_code" && qrUrl &&
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="p-3 bg-card rounded-xl border border-border text-center">
                     <img src={qrUrl} alt="QR Payment" className="w-48 h-48 mx-auto rounded-lg object-contain" />
                     <p className="text-xs text-muted-foreground mt-2">{t("booking.scanQR")}</p>
                   </motion.div>
-                )}
-                {form.paymentMethod === "cash" && (
-                  <p className="text-xs text-muted-foreground">{t("booking.cashNote")}</p>
-                )}
+              }
+                {form.paymentMethod === "cash" &&
+              <p className="text-xs text-muted-foreground">{t("booking.cashNote")}</p>
+              }
               </div>
 
               <Button
-                type="submit"
-                disabled={submitting || !startDate || (bookingType === "daily_rental" && (!endDate || days < 1))}
-                className="w-full h-12 text-sm font-semibold"
-                style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
-              >
+              type="submit"
+              disabled={submitting || !startDate || bookingType === "daily_rental" && (!endDate || days < 1)}
+              className="w-full h-12 text-sm font-semibold"
+              style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
+              
                 {submitting ? t("booking.submitting") : t("booking.submit")}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
                 {bookingType === "taxi" ? t("booking.taxiPriceNote") : t("booking.confirmNote")}
               </p>
             </form>
-          )}
+          }
         </DialogContent>
       </Dialog>
 
@@ -954,8 +954,8 @@ export default function Index() {
                 onClick={() => {
                   navigator.clipboard.writeText(bookingCode);
                   toast({ title: t("success.copied"), description: `${bookingCode}` });
-                }}
-              >
+                }}>
+                
                 <span className="font-mono font-bold text-2xl tracking-widest text-gold">{bookingCode}</span>
                 <Copy className="w-4 h-4 text-gold" />
               </div>
@@ -963,15 +963,15 @@ export default function Index() {
             </div>
             <div className="rounded-xl p-4 text-sm text-left space-y-1" style={{ background: "hsl(var(--muted))" }}>
               <p className="font-semibold text-foreground">{bookingSummary?.vanName}</p>
-              {bookingSummary && bookingSummary.bookingType === "daily_rental" && (
-                <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} {t("booking.days")})</p>
-              )}
-              {bookingSummary && bookingSummary.bookingType === "taxi" && (
-                <p className="text-muted-foreground">{bookingSummary.startDate} • {t("booking.typeTaxi")}</p>
-              )}
-              {bookingSummary && bookingSummary.totalPrice > 0 && (
-                <p className="text-gold font-bold">{t("success.total")}: ฿{bookingSummary.totalPrice.toLocaleString()}</p>
-              )}
+              {bookingSummary && bookingSummary.bookingType === "daily_rental" &&
+              <p className="text-muted-foreground">{bookingSummary.startDate} – {bookingSummary.endDate} ({bookingSummary.days} {t("booking.days")})</p>
+              }
+              {bookingSummary && bookingSummary.bookingType === "taxi" &&
+              <p className="text-muted-foreground">{bookingSummary.startDate} • {t("booking.typeTaxi")}</p>
+              }
+              {bookingSummary && bookingSummary.totalPrice > 0 &&
+              <p className="text-gold font-bold">{t("success.total")}: ฿{bookingSummary.totalPrice.toLocaleString()}</p>
+              }
             </div>
             <p className="text-xs text-muted-foreground">
               {bookingSummary?.bookingType === "taxi" ? t("success.taxiNote") : t("success.confirmNote")}
@@ -993,7 +993,7 @@ export default function Index() {
       </Dialog>
 
       {/* Booking Lookup Dialog */}
-      <Dialog open={lookupOpen} onOpenChange={(open) => { setLookupOpen(open); if (!open) { setLookupResult(null); setLookupResults([]); setLookupError(""); setLookupCode(""); } }}>
+      <Dialog open={lookupOpen} onOpenChange={(open) => {setLookupOpen(open);if (!open) {setLookupResult(null);setLookupResults([]);setLookupError("");setLookupCode("");}}}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1008,23 +1008,23 @@ export default function Index() {
                 value={lookupCode}
                 onChange={(e) => setLookupCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-                className="font-mono tracking-wider uppercase"
-              />
+                className="font-mono tracking-wider uppercase" />
+              
               <Button onClick={handleLookup} disabled={lookupLoading || !lookupCode.trim()} style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                 {lookupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">{t("lookup.hint")}</p>
 
-            {lookupError && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">{lookupError}</motion.p>
-            )}
+            {lookupError &&
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">{lookupError}</motion.p>
+            }
 
-            {lookupResults.length > 0 && !lookupResult && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+            {lookupResults.length > 0 && !lookupResult &&
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
                 <p className="text-sm font-medium text-foreground">{t("lookup.found")} {lookupResults.length} {t("lookup.bookings")}</p>
-                {lookupResults.map((b: any) => (
-                  <div key={b.id} onClick={() => setLookupResult(b)} className="p-3 rounded-lg border border-border hover:border-gold/40 cursor-pointer transition-colors">
+                {lookupResults.map((b: any) =>
+              <div key={b.id} onClick={() => setLookupResult(b)} className="p-3 rounded-lg border border-border hover:border-gold/40 cursor-pointer transition-colors">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="font-mono text-xs font-bold tracking-wider text-gold">{b.booking_code ?? "—"}</span>
@@ -1032,33 +1032,33 @@ export default function Index() {
                         {b.booking_type === "taxi" && <span className="text-[10px] bg-accent px-1.5 py-0.5 rounded">{t("lookup.taxi")}</span>}
                       </div>
                       <span className={cn(
-                        "px-2 py-0.5 rounded-full text-xs font-semibold",
-                        b.status === "confirmed" && "bg-green-100 text-green-700",
-                        b.status === "pending" && "bg-yellow-100 text-yellow-700",
-                        b.status === "proceed" && "bg-purple-100 text-purple-700",
-                        b.status === "completed" && "bg-blue-100 text-blue-700",
-                        b.status === "cancelled" && "bg-red-100 text-red-700",
-                      )}>
+                    "px-2 py-0.5 rounded-full text-xs font-semibold",
+                    b.status === "confirmed" && "bg-green-100 text-green-700",
+                    b.status === "pending" && "bg-yellow-100 text-yellow-700",
+                    b.status === "proceed" && "bg-purple-100 text-purple-700",
+                    b.status === "completed" && "bg-blue-100 text-blue-700",
+                    b.status === "cancelled" && "bg-red-100 text-red-700"
+                  )}>
                         {getStatusText(b.status, t)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{b.start_date} → {b.end_date} • ฿{Number(b.total_price).toLocaleString()}</p>
                   </div>
-                ))}
+              )}
               </motion.div>
-            )}
+            }
 
-            {lookupResult && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                {lookupResults.length > 0 && (
-                  <button onClick={() => setLookupResult(null)} className="text-xs text-gold hover:underline flex items-center gap-1">
+            {lookupResult &&
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                {lookupResults.length > 0 &&
+              <button onClick={() => setLookupResult(null)} className="text-xs text-gold hover:underline flex items-center gap-1">
                     <ChevronLeft className="w-3 h-3" /> {t("lookup.back")}
                   </button>
-                )}
+              }
                 <div className="rounded-xl overflow-hidden border border-border">
-                  {lookupResult.vans?.image_url && (
-                    <img src={lookupResult.vans.image_url} alt={lookupResult.vans.name} className="w-full h-40 object-cover" />
-                  )}
+                  {lookupResult.vans?.image_url &&
+                <img src={lookupResult.vans.image_url} alt={lookupResult.vans.name} className="w-full h-40 object-cover" />
+                }
                   <div className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1066,13 +1066,13 @@ export default function Index() {
                         <p className="text-xs text-muted-foreground">{lookupResult.vans?.model}</p>
                       </div>
                       <span className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-semibold",
-                        lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
-                        lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
-                        lookupResult.status === "proceed" && "bg-purple-100 text-purple-700",
-                        lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
-                        lookupResult.status === "cancelled" && "bg-red-100 text-red-700",
-                      )}>
+                      "px-2.5 py-1 rounded-full text-xs font-semibold",
+                      lookupResult.status === "confirmed" && "bg-green-100 text-green-700",
+                      lookupResult.status === "pending" && "bg-yellow-100 text-yellow-700",
+                      lookupResult.status === "proceed" && "bg-purple-100 text-purple-700",
+                      lookupResult.status === "completed" && "bg-blue-100 text-blue-700",
+                      lookupResult.status === "cancelled" && "bg-red-100 text-red-700"
+                    )}>
                         {getStatusText(lookupResult.status, t)}
                       </span>
                     </div>
@@ -1097,45 +1097,45 @@ export default function Index() {
                         <p className="text-xs text-muted-foreground">{t("lookup.startDate")}</p>
                         <p className="font-medium text-foreground">{lookupResult.start_date}</p>
                       </div>
-                      {lookupResult.booking_type !== "taxi" && (
-                        <div>
+                      {lookupResult.booking_type !== "taxi" &&
+                    <div>
                           <p className="text-xs text-muted-foreground">{t("lookup.endDate")}</p>
                           <p className="font-medium text-foreground">{lookupResult.end_date}</p>
                         </div>
-                      )}
+                    }
                       <div>
                         <p className="text-xs text-muted-foreground">{t("lookup.pickupLocation")}</p>
                         <p className="font-medium text-foreground">{lookupResult.pickup_location}</p>
                       </div>
-                      {lookupResult.dropoff_location && (
-                        <div>
+                      {lookupResult.dropoff_location &&
+                    <div>
                           <p className="text-xs text-muted-foreground">{t("lookup.dropoffLocation")}</p>
                           <p className="font-medium text-foreground">{lookupResult.dropoff_location}</p>
                         </div>
-                      )}
-                      {lookupResult.total_price > 0 && (
-                        <div>
+                    }
+                      {lookupResult.total_price > 0 &&
+                    <div>
                           <p className="text-xs text-muted-foreground">{t("lookup.totalPrice")}</p>
                           <p className="font-bold text-gold">฿{Number(lookupResult.total_price).toLocaleString()}</p>
                         </div>
-                      )}
+                    }
                     </div>
-                    {lookupResult.notes && (
-                      <div>
+                    {lookupResult.notes &&
+                  <div>
                         <p className="text-xs text-muted-foreground">{t("lookup.notes")}</p>
                         <p className="text-sm text-foreground">{lookupResult.notes}</p>
                       </div>
-                    )}
+                  }
                   </div>
                 </div>
               </motion.div>
-            )}
+            }
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Rating Dialog */}
-      <Dialog open={ratingOpen} onOpenChange={(open) => { setRatingOpen(open); if (!open) { setRatingSearch(""); setRatingBookings([]); setRatingSelected(null); setRatingError(""); setRatingSuccess(false); setRatingValue(0); setRatingComment(""); } }}>
+      <Dialog open={ratingOpen} onOpenChange={(open) => {setRatingOpen(open);if (!open) {setRatingSearch("");setRatingBookings([]);setRatingSelected(null);setRatingError("");setRatingSuccess(false);setRatingValue(0);setRatingComment("");}}}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1144,72 +1144,72 @@ export default function Index() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {!ratingSelected && (
-              <>
+            {!ratingSelected &&
+            <>
                 <div className="flex gap-2">
                   <Input
-                    placeholder={t("rating.searchPlaceholder")}
-                    value={ratingSearch}
-                    onChange={(e) => setRatingSearch(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => e.key === "Enter" && handleRatingSearch()}
-                    className="font-mono tracking-wider uppercase"
-                  />
+                  placeholder={t("rating.searchPlaceholder")}
+                  value={ratingSearch}
+                  onChange={(e) => setRatingSearch(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && handleRatingSearch()}
+                  className="font-mono tracking-wider uppercase" />
+                
                   <Button onClick={handleRatingSearch} disabled={ratingLoading || !ratingSearch.trim()} style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
                     {ratingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">{t("rating.searchHint")}</p>
 
-                {ratingError && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">{ratingError}</motion.p>
-                )}
+                {ratingError &&
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-destructive text-center py-2">{ratingError}</motion.p>
+              }
 
-                {ratingSuccess && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-4 space-y-2">
+                {ratingSuccess &&
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-4 space-y-2">
                     <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center" style={{ background: "hsl(var(--gold) / 0.1)", border: "2px solid hsl(var(--gold) / 0.4)" }}>
                       <ThumbsUp className="w-7 h-7 text-gold" />
                     </div>
                     <p className="font-bold text-foreground">{t("rating.thankYou")}</p>
                     <p className="text-sm text-muted-foreground">{t("rating.thankYouDesc")}</p>
                   </motion.div>
-                )}
+              }
 
-                {ratingBookings.length > 0 && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                {ratingBookings.length > 0 &&
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
                     <p className="text-sm font-medium">{t("rating.selectTrip")}</p>
-                    {ratingBookings.map((b: any) => (
-                      <div
-                        key={b.id}
-                        onClick={() => !b.alreadyRated && setRatingSelected(b)}
-                        className={cn(
-                          "p-3 rounded-lg border transition-colors",
-                          b.alreadyRated
-                            ? "border-border bg-muted/50 opacity-60 cursor-not-allowed"
-                            : "border-border hover:border-gold/40 cursor-pointer"
-                        )}
-                      >
+                    {ratingBookings.map((b: any) =>
+                <div
+                  key={b.id}
+                  onClick={() => !b.alreadyRated && setRatingSelected(b)}
+                  className={cn(
+                    "p-3 rounded-lg border transition-colors",
+                    b.alreadyRated ?
+                    "border-border bg-muted/50 opacity-60 cursor-not-allowed" :
+                    "border-border hover:border-gold/40 cursor-pointer"
+                  )}>
+                  
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-mono text-xs font-bold tracking-wider text-gold">{b.booking_code ?? "—"}</span>
                             <p className="text-sm font-medium mt-0.5">{b.vans?.name ?? "Van"}</p>
                           </div>
-                          {b.alreadyRated ? (
-                            <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{t("rating.alreadyRated")}</span>
-                          ) : (
-                            <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">{t("rating.rateNow")}</span>
-                          )}
+                          {b.alreadyRated ?
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{t("rating.alreadyRated")}</span> :
+
+                    <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">{t("rating.rateNow")}</span>
+                    }
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{b.start_date} • {b.pickup_location}</p>
                       </div>
-                    ))}
-                  </motion.div>
                 )}
+                  </motion.div>
+              }
               </>
-            )}
+            }
 
-            {ratingSelected && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <button onClick={() => { setRatingSelected(null); setRatingValue(0); setRatingComment(""); }} className="text-xs text-gold hover:underline flex items-center gap-1">
+            {ratingSelected &&
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                <button onClick={() => {setRatingSelected(null);setRatingValue(0);setRatingComment("");}} className="text-xs text-gold hover:underline flex items-center gap-1">
                   <ChevronLeft className="w-3 h-3" /> {t("rating.backToList")}
                 </button>
 
@@ -1221,56 +1221,56 @@ export default function Index() {
                 <div className="text-center space-y-2">
                   <p className="text-sm font-semibold">{t("rating.howWas")}</p>
                   <div className="flex justify-center gap-1">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setRatingValue(star)}
-                        className="p-1 transition-transform hover:scale-110"
-                      >
+                    {[1, 2, 3, 4, 5].map((star) =>
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingValue(star)}
+                    className="p-1 transition-transform hover:scale-110">
+                    
                         <Star className={cn("w-8 h-8 transition-colors", star <= ratingValue ? "fill-gold text-gold" : "text-border")} />
                       </button>
-                    ))}
+                  )}
                   </div>
-                  {ratingValue > 0 && (
-                    <p className="text-xs text-gold font-medium">
+                  {ratingValue > 0 &&
+                <p className="text-xs text-gold font-medium">
                       {ratingValue === 5 ? t("rating.star5") : ratingValue === 4 ? t("rating.star4") : ratingValue === 3 ? t("rating.star3") : ratingValue === 2 ? t("rating.star2") : t("rating.star1")}
                     </p>
-                  )}
+                }
                 </div>
 
                 <div className="space-y-1.5">
                   <Label>{t("rating.comment")} <span className="text-muted-foreground text-xs">{t("booking.optional")}</span></Label>
                   <Textarea
-                    placeholder={t("rating.commentPlaceholder")}
-                    rows={2}
-                    value={ratingComment}
-                    onChange={(e) => setRatingComment(e.target.value)}
-                  />
+                  placeholder={t("rating.commentPlaceholder")}
+                  rows={2}
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)} />
+                
                 </div>
 
                 <Button
-                  onClick={handleRatingSubmit}
-                  disabled={ratingSubmitting || ratingValue === 0}
-                  className="w-full h-11"
-                  style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}
-                >
+                onClick={handleRatingSubmit}
+                disabled={ratingSubmitting || ratingValue === 0}
+                className="w-full h-11"
+                style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
+                
                   {ratingSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ThumbsUp className="w-4 h-4 mr-2" />}
                   {t("rating.submitRating")}
                 </Button>
               </motion.div>
-            )}
+            }
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
 
 // Image carousel
-function VanImageCarousel({ van, height = "h-52", rounded = "", noImageText = "No Image" }: { van: Van; height?: string; rounded?: string; noImageText?: string }) {
+function VanImageCarousel({ van, height = "h-52", rounded = "", noImageText = "No Image" }: {van: Van;height?: string;rounded?: string;noImageText?: string;}) {
   const [current, setCurrent] = useState(0);
-  const allImages = [...(van.image_url ? [van.image_url] : []), ...van.images.map(img => img.image_url)];
+  const allImages = [...(van.image_url ? [van.image_url] : []), ...van.images.map((img) => img.image_url)];
 
   if (allImages.length === 0) {
     return <div className={`relative ${height} ${rounded} overflow-hidden bg-muted flex items-center justify-center text-muted-foreground`}>{noImageText}</div>;
@@ -1279,29 +1279,29 @@ function VanImageCarousel({ van, height = "h-52", rounded = "", noImageText = "N
   return (
     <div className={`relative ${height} ${rounded} overflow-hidden group/carousel`}>
       <img src={allImages[current]} alt={van.name} className="w-full h-full object-cover transition-transform duration-500" />
-      {van.features.vip_seats && (
-        <div className="absolute top-3 left-3 z-10">
+      {van.features.vip_seats &&
+      <div className="absolute top-3 left-3 z-10">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gold text-primary"><Star className="w-3 h-3" /> VIP</span>
         </div>
-      )}
+      }
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-      {allImages.length > 1 && (
-        <>
-          <button type="button" onClick={(e) => { e.stopPropagation(); setCurrent(c => (c - 1 + allImages.length) % allImages.length); }} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10">
+      {allImages.length > 1 &&
+      <>
+          <button type="button" onClick={(e) => {e.stopPropagation();setCurrent((c) => (c - 1 + allImages.length) % allImages.length);}} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); setCurrent(c => (c + 1) % allImages.length); }} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10">
+          <button type="button" onClick={(e) => {e.stopPropagation();setCurrent((c) => (c + 1) % allImages.length);}} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10">
             <ChevronRightIcon className="w-4 h-4" />
           </button>
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-            {allImages.map((_, i) => (
-              <button key={i} type="button" onClick={(e) => { e.stopPropagation(); setCurrent(i); }} className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-white w-3" : "bg-white/50"}`} />
-            ))}
+            {allImages.map((_, i) =>
+          <button key={i} type="button" onClick={(e) => {e.stopPropagation();setCurrent(i);}} className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-white w-3" : "bg-white/50"}`} />
+          )}
           </div>
         </>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 function SkeletonCard() {
@@ -1316,6 +1316,6 @@ function SkeletonCard() {
         <Skeleton className="h-4 w-48" />
         <Skeleton className="h-10 w-full rounded-lg" />
       </div>
-    </div>
-  );
+    </div>);
+
 }
