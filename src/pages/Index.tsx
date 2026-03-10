@@ -445,7 +445,7 @@ export default function Index() {
       <section id="fleet" className="py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">{t("fleet.tag")}</p>
+            <p className="font-semibold tracking-widest uppercase text-gold mb-2 text-base">{t("fleet.tag")}</p>
             <h2 className="text-3xl font-bold text-foreground">{t("fleet.title")}</h2>
             <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm">{t("fleet.desc")}</p>
           </div>
@@ -523,7 +523,7 @@ export default function Index() {
       <section id="explore" className="py-20 px-4 sm:px-6 bg-muted/30">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
-              <p className="text-xs font-semibold tracking-widest uppercase text-gold mb-2">{t("explore.tag")}</p>
+              <p className="font-semibold tracking-widest uppercase text-gold mb-2 text-base">{t("explore.tag")}</p>
               <div className="flex justify-center gap-3 mt-4">
                 <Button
                 variant={exploreTab === "attractions" ? "default" : "outline"}
