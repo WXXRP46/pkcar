@@ -12,8 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { CheckCircle, XCircle, Filter, Phone, Search, Pencil, Loader2, CreditCard, QrCode, Banknote } from "lucide-react";
+import { CheckCircle, XCircle, Filter, Phone, Search, Pencil, Loader2, CreditCard, QrCode, Banknote, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const googleMapsUrl = (location: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
 
 type BookingStatus = "pending" | "confirmed" | "proceed" | "completed" | "cancelled";
 
