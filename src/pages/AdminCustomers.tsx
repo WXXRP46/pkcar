@@ -86,6 +86,31 @@ export default function AdminCustomers() {
     setDetailLoading(false);
   };
 
+  const handleDeleteCustomer = async (customer: Customer) => {
+    if (!confirm(`ต้องการลบประวัติการจองทั้งหมดของ ${customer.customer_name}? (${customer.total_bookings} รายการ)`)) return;
+    const { error } = await (supabase as any).from("bookings").delete().eq("customer_phone", customer.customer_phone);
+    if (error) {
+      toast({ title: "ลบไม่สำเร็จ", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "ลบประวัติลูกค้าแล้ว" });
+      setSelectedCustomer(null);
+      setLoading(true);
+      fetchCustomers();
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm("ต้องการลบการจองนี้?")) return;
+    const { error } = await (supabase as any).from("bookings").delete().eq("id", bookingId);
+    if (error) {
+      toast({ title: "ลบไม่สำเร็จ", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "ลบการจองแล้ว" });
+      if (selectedCustomer) openDetail(selectedCustomer);
+      fetchCustomers();
+    }
+  };
+
   const filtered = customers.filter((c) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
