@@ -22,6 +22,7 @@ const navItems = [
   { href: "/admin/reports", label: "รายงาน", icon: BarChart3 },
   { href: "/admin/attractions", label: "ที่เที่ยว", icon: MapPin },
   { href: "/admin/events", label: "กิจกรรม", icon: Sparkles },
+  { href: "/admin/payments", label: "ระบบชำระเงิน", icon: Wallet },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

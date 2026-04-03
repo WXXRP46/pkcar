@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,7 +51,6 @@ export default function AdminDriverRatings() {
     const allRatings = (ratingsData ?? []) as Rating[];
     setRatings(allRatings);
 
-    // Calculate driver summaries
     const driverMap: Record<string, { name: string; photo_url: string | null; ratings: number[]; }> = {};
     allRatings.forEach(r => {
       if (!driverMap[r.driver_id]) {
@@ -104,29 +102,6 @@ export default function AdminDriverRatings() {
       toast({ title: "ลบคะแนนแล้ว" });
       fetchData();
     }
-  };
-
-  const handleSaveQR = async () => {
-    setQrSaving(true);
-    try {
-      let finalUrl = qrUrl;
-      if (qrFile) {
-        const ext = qrFile.name.split(".").pop();
-        const path = `qr/payment-qr.${ext}`;
-        const { error: uploadErr } = await supabase.storage.from("van-images").upload(path, qrFile, { upsert: true });
-        if (uploadErr) throw uploadErr;
-        const { data } = supabase.storage.from("van-images").getPublicUrl(path);
-        finalUrl = data.publicUrl;
-      }
-      const { error } = await (supabase as any).from("site_settings").update({ value: finalUrl, updated_at: new Date().toISOString() }).eq("key", "payment_qr_url");
-      if (error) throw error;
-      setQrUrl(finalUrl);
-      setQrFile(null);
-      toast({ title: "บันทึก QR Code แล้ว" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    }
-    setQrSaving(false);
   };
 
   const StarDisplay = ({ value, size = "w-4 h-4" }: { value: number; size?: string }) => (
