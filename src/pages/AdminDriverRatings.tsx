@@ -41,9 +41,6 @@ export default function AdminDriverRatings() {
   const [editingRating, setEditingRating] = useState<Rating | null>(null);
   const [editForm, setEditForm] = useState({ rating: 0, comment: "" });
   const [saving, setSaving] = useState(false);
-  const [qrUrl, setQrUrl] = useState("");
-  const [qrSaving, setQrSaving] = useState(false);
-  const [qrFile, setQrFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const fetchData = useCallback(async () => {
