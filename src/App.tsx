@@ -16,6 +16,7 @@ import AdminDrivers from "./pages/AdminDrivers";
 import AdminAttractions from "./pages/AdminAttractions";
 import AdminEvents from "./pages/AdminEvents";
 import AdminDriverRatings from "./pages/AdminDriverRatings";
+import AdminPayments from "./pages/AdminPayments";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
