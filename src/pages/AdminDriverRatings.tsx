@@ -69,10 +69,6 @@ export default function AdminDriverRatings() {
       totalRatings: d.ratings.length,
     })).sort((a, b) => b.avgRating - a.avgRating));
 
-    // Load QR URL
-    const { data: qrData } = await (supabase as any).from("site_settings").select("value").eq("key", "payment_qr_url").maybeSingle();
-    setQrUrl(qrData?.value ?? "");
-
     setLoading(false);
   }, []);
 
