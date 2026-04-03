@@ -46,34 +46,33 @@ export default function AdminCustomers() {
   const [detailLoading, setDetailLoading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("bookings")
-        .select("customer_name, customer_phone, total_price, created_at, status")
-        .order("created_at", { ascending: false });
+  const fetchCustomers = async () => {
+    const { data } = await supabase
+      .from("bookings")
+      .select("customer_name, customer_phone, total_price, created_at, status")
+      .order("created_at", { ascending: false });
 
-      const map: Record<string, Customer> = {};
-      (data ?? []).forEach((b: any) => {
-        const key = b.customer_phone;
-        if (!map[key]) {
-          map[key] = {
-            customer_name: b.customer_name,
-            customer_phone: b.customer_phone,
-            total_bookings: 0,
-            total_spent: 0,
-            last_booking: b.created_at,
-          };
-        }
-        map[key].total_bookings++;
-        if (b.status !== "cancelled") map[key].total_spent += Number(b.total_price);
-      });
+    const map: Record<string, Customer> = {};
+    (data ?? []).forEach((b: any) => {
+      const key = b.customer_phone;
+      if (!map[key]) {
+        map[key] = {
+          customer_name: b.customer_name,
+          customer_phone: b.customer_phone,
+          total_bookings: 0,
+          total_spent: 0,
+          last_booking: b.created_at,
+        };
+      }
+      map[key].total_bookings++;
+      if (b.status !== "cancelled") map[key].total_spent += Number(b.total_price);
+    });
 
-      setCustomers(Object.values(map).sort((a, b) => b.total_bookings - a.total_bookings));
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+    setCustomers(Object.values(map).sort((a, b) => b.total_bookings - a.total_bookings));
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchCustomers(); }, []);
 
   const openDetail = async (customer: Customer) => {
     setSelectedCustomer(customer);
