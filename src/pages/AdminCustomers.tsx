@@ -44,6 +44,7 @@ export default function AdminCustomers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerBookings, setCustomerBookings] = useState<CustomerBooking[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetch = async () => {
