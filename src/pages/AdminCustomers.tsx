@@ -5,7 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Phone, User, CalendarCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Phone, User, CalendarCheck, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 interface CustomerBooking {
