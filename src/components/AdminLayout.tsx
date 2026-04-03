@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Car, CalendarCheck, LogOut, Crown, ChevronRight,
-  CalendarDays, Users, BarChart3, UserCircle, Bell, MapPin, Sparkles, Star
+  CalendarDays, Users, BarChart3, UserCircle, Bell, MapPin, Sparkles, Star, Wallet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
