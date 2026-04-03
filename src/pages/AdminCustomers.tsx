@@ -239,6 +239,10 @@ export default function AdminCustomers() {
                   ))}
                 </div>
               )}
+              <Button variant="destructive" size="sm" className="w-full gap-2 mt-2" onClick={() => handleDeleteCustomer(selectedCustomer)}>
+                <Trash2 className="w-4 h-4" />
+                ลบประวัติลูกค้าทั้งหมด
+              </Button>
             </div>
           )}
         </DialogContent>
