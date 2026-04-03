@@ -145,42 +145,6 @@ export default function AdminDriverRatings() {
           <p className="text-muted-foreground text-sm mt-1">จัดการคะแนนและรีวิวจากลูกค้า</p>
         </div>
 
-        {/* QR Code Management */}
-        <Card className="shadow-card border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10">
-                <QrCode className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-bold text-lg">จัดการ QR Code ชำระเงิน</h2>
-                <p className="text-xs text-muted-foreground">อัพโหลดรูป QR Code สำหรับให้ลูกค้าสแกนจ่ายเงิน</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
-              {qrUrl && (
-                <div className="w-40 h-40 rounded-xl border border-border overflow-hidden bg-card flex-shrink-0">
-                  <img src={qrUrl} alt="QR Code" className="w-full h-full object-contain" />
-                </div>
-              )}
-              <div className="flex-1 space-y-3">
-                <div className="space-y-1.5">
-                  <Label>URL รูป QR Code</Label>
-                  <Input value={qrUrl} onChange={(e) => setQrUrl(e.target.value)} placeholder="https://..." />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>หรืออัพโหลดรูปใหม่</Label>
-                  <Input type="file" accept="image/*" onChange={(e) => setQrFile(e.target.files?.[0] ?? null)} />
-                </div>
-                <Button onClick={handleSaveQR} disabled={qrSaving} className="gap-2" style={{ background: "hsl(var(--gold))", color: "hsl(var(--primary))" }}>
-                  {qrSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  บันทึก QR Code
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Driver Summaries */}
         {driverSummaries.length > 0 && (
           <div>
