@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Trash2, Pencil, Loader2, Upload, QrCode, Image as ImageIcon } from "lucide-react";
+import { Star, Trash2, Pencil, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Rating {
