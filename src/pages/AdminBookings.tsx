@@ -230,7 +230,16 @@ export default function AdminBookings() {
                           <p>{format(new Date(booking.start_date), "d MMM yyyy")}</p>
                           <p className="text-muted-foreground">→ {format(new Date(booking.end_date), "d MMM yyyy")}</p>
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground max-w-[140px] truncate">{booking.pickup_location}</td>
+                        <td className="p-4 text-sm max-w-[140px] truncate">
+                          <a href={googleMapsUrl(booking.pickup_location)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1" title={booking.pickup_location}>
+                            <MapPin className="w-3 h-3 flex-shrink-0" />{booking.pickup_location}
+                          </a>
+                          {booking.dropoff_location && (
+                            <a href={googleMapsUrl(booking.dropoff_location)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1 mt-0.5" title={booking.dropoff_location}>
+                              <MapPin className="w-3 h-3 flex-shrink-0" />→ {booking.dropoff_location}
+                            </a>
+                          )}
+                        </td>
                         <td className="p-4">
                           <span className="text-xs flex items-center gap-1 text-muted-foreground">
                             <PmIcon className="w-3 h-3" /> {pm.label}
