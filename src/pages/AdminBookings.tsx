@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { CheckCircle, XCircle, Filter, Phone, Search, Pencil, Loader2, CreditCard, QrCode, Banknote, MapPin } from "lucide-react";
+import { CheckCircle, XCircle, Filter, Phone, Search, Pencil, Loader2, CreditCard, QrCode, Banknote, MapPin, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const googleMapsUrl = (location: string) =>
@@ -74,7 +74,7 @@ export default function AdminBookings() {
   const { toast } = useToast();
 
   const fetchBookings = useCallback(async () => {
-    let query = supabase.from("bookings").select("*, vans(name, model)").order("created_at", { ascending: false });
+    let query = (supabase as any).from("bookings").select("*, vans(name, model)").is("deleted_at", null).order("created_at", { ascending: false });
     if (filter !== "all") query = query.eq("status", filter as BookingStatus);
     const { data } = await query;
     setBookings((data as Booking[]) ?? []);
@@ -97,6 +97,17 @@ export default function AdminBookings() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Status Updated", description: `Booking marked as ${status}` });
+      fetchBookings();
+    }
+  };
+
+  const moveToTrash = async (id: string) => {
+    if (!confirm("ย้ายการจองนี้ไปยังถังขยะ? คุณสามารถกู้คืนได้ภายใน 30 วัน")) return;
+    const { error } = await (supabase as any).from("bookings").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    if (error) {
+      toast({ title: "ลบไม่สำเร็จ", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "ย้ายไปถังขยะแล้ว", description: "กู้คืนได้ที่หน้าถังขยะ" });
       fetchBookings();
     }
   };
