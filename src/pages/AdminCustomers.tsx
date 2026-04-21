@@ -47,9 +47,10 @@ export default function AdminCustomers() {
   const { toast } = useToast();
 
   const fetchCustomers = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("bookings")
       .select("customer_name, customer_phone, total_price, created_at, status")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     const map: Record<string, Customer> = {};
@@ -77,10 +78,11 @@ export default function AdminCustomers() {
   const openDetail = async (customer: Customer) => {
     setSelectedCustomer(customer);
     setDetailLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("bookings")
       .select("id, booking_code, start_date, end_date, total_price, status, created_at, vans(name)")
       .eq("customer_phone", customer.customer_phone)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     setCustomerBookings((data as CustomerBooking[]) ?? []);
     setDetailLoading(false);
