@@ -66,6 +66,7 @@ export type Database = {
           created_at: string
           customer_name: string
           customer_phone: string
+          deleted_at: string | null
           dropoff_location: string | null
           end_date: string
           id: string
@@ -85,6 +86,7 @@ export type Database = {
           created_at?: string
           customer_name: string
           customer_phone: string
+          deleted_at?: string | null
           dropoff_location?: string | null
           end_date: string
           id?: string
@@ -104,6 +106,7 @@ export type Database = {
           created_at?: string
           customer_name?: string
           customer_phone?: string
+          deleted_at?: string | null
           dropoff_location?: string | null
           end_date?: string
           id?: string
@@ -402,6 +405,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      purge_old_trashed_bookings: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "staff"
