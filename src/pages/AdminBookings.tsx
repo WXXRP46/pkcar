@@ -288,6 +288,9 @@ export default function AdminBookings() {
                                 <XCircle className="w-4 h-4 mr-1 text-destructive" /> ยกเลิก
                               </Button>
                             )}
+                            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-destructive/10 text-destructive" onClick={() => moveToTrash(booking.id)}>
+                              <Trash2 className="w-3.5 h-3.5 mr-1" /> ลบ
+                            </Button>
                           </div>
                         </td>
                       </motion.tr>
@@ -353,6 +356,9 @@ export default function AdminBookings() {
                         ยกเลิก
                       </Button>
                     )}
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-destructive hover:bg-destructive/10" onClick={() => moveToTrash(booking.id)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

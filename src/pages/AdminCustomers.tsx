@@ -87,12 +87,12 @@ export default function AdminCustomers() {
   };
 
   const handleDeleteCustomer = async (customer: Customer) => {
-    if (!confirm(`ต้องการลบประวัติการจองทั้งหมดของ ${customer.customer_name}? (${customer.total_bookings} รายการ)`)) return;
-    const { error } = await (supabase as any).from("bookings").delete().eq("customer_phone", customer.customer_phone);
+    if (!confirm(`ย้ายประวัติการจองทั้งหมดของ ${customer.customer_name} ไปยังถังขยะ? (${customer.total_bookings} รายการ) กู้คืนได้ภายใน 30 วัน`)) return;
+    const { error } = await (supabase as any).from("bookings").update({ deleted_at: new Date().toISOString() }).eq("customer_phone", customer.customer_phone).is("deleted_at", null);
     if (error) {
       toast({ title: "ลบไม่สำเร็จ", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "ลบประวัติลูกค้าแล้ว" });
+      toast({ title: "ย้ายไปถังขยะแล้ว" });
       setSelectedCustomer(null);
       setLoading(true);
       fetchCustomers();
@@ -100,12 +100,12 @@ export default function AdminCustomers() {
   };
 
   const handleDeleteBooking = async (bookingId: string) => {
-    if (!confirm("ต้องการลบการจองนี้?")) return;
-    const { error } = await (supabase as any).from("bookings").delete().eq("id", bookingId);
+    if (!confirm("ย้ายการจองนี้ไปยังถังขยะ?")) return;
+    const { error } = await (supabase as any).from("bookings").update({ deleted_at: new Date().toISOString() }).eq("id", bookingId);
     if (error) {
       toast({ title: "ลบไม่สำเร็จ", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "ลบการจองแล้ว" });
+      toast({ title: "ย้ายไปถังขยะแล้ว" });
       if (selectedCustomer) openDetail(selectedCustomer);
       fetchCustomers();
     }
